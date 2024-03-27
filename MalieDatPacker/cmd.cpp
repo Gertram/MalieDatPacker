@@ -47,7 +47,7 @@ bool parseEncryption(const std::vector<std::string>& arguments, EncryptionType& 
 		return true;
 	}
 	if (encoder_pos + 1 == arguments.size()) {
-		std::wcout << "Encryption expected but end of line detected" << std::endl;
+		std::wcout << L"Encryption expected but end of line detected" << std::endl;
 		return false;
 	}
 	const auto encoderStr = arguments[encoder_pos + 1];
@@ -151,6 +151,52 @@ const CamelliaConfigItem* initConfigByDatHeader(CamelliaConfig config, const std
 	fclose(file);
 
 	return initConfigByExpectHeader(config, expect_header, checkOffset);
+}
+
+const CamelliaConfigItem* initConfigByGame(CamelliaConfig config, const std::vector<std::string>& arguments)
+{
+	const auto gamePos = findPosition<std::string>(arguments, "-game");
+
+	if (gamePos == -1) {
+		return nullptr;
+	}
+
+	if (gamePos + 1 == arguments.size()) {
+		return nullptr;
+	}
+
+	const auto& gameStr = arguments[gamePos + 1];
+
+	std::wstring game = std::filesystem::path(gameStr).filename().wstring();
+
+	std::vector<CamelliaConfigItem*> results;
+
+	std::wcout << L"Search results: " << std::endl;
+
+	size_t index = 1;
+
+	for (const auto& pair : config) {
+		for (const auto& name : pair.second->getGames()) {
+			if (name.find(game) != std::wstring::npos) {
+				std::wcout << index << L"." << name << std::endl;
+				results.push_back(pair.second);
+				index++;
+			}
+		}
+	}
+
+	std::wcout << L"Enter game number: ";
+
+	size_t number;
+
+	std::wcin >> number;
+
+	if (number < 1 || number > results.size()) {
+		std::wcout << L"Incorrect input" << std::endl;
+		return nullptr;
+	}
+
+	return results[number-1];
 }
 
 

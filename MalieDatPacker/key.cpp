@@ -17,7 +17,7 @@ const wchar_t UTF16BE_MAGIC[] = { 0xFE,0xFF };
 
 const wchar_t UTF8_MAGIC[] = { 0xEF,0xBB,0xBF };
 
-const uint8_t magic_length = sizeof(UTF8_MAGIC)/sizeof(wchar_t);
+const uint8_t magic_length = sizeof(UTF8_MAGIC) / sizeof(wchar_t);
 
 enum ReadState {
 	None,
@@ -26,12 +26,12 @@ enum ReadState {
 	Key
 };
 
-CamelliaConfigItem* read_key(const std::wstring &path)
+CamelliaConfigItem* read_key(const std::wstring& path)
 {
 	std::wifstream input(path);
 
 	if (!input.is_open()) {
-		std::wcout << "File \""<< path <<"\" was not opened" << std::endl;
+		std::wcout << L"File \"" << path << L"\" was not opened" << std::endl;
 		return nullptr;
 	}
 
@@ -76,11 +76,11 @@ CamelliaConfigItem* read_key(const std::wstring &path)
 				continue;
 			}
 			catch (std::invalid_argument) {
-				std::wcout << "Invalid string for KEY in line " << line_number << " in key \"" << path << "\"" << std::endl;
+				std::wcout << L"Invalid string for KEY in line " << line_number << L" in key \"" << path << "\"" << std::endl;
 				return nullptr;
 			}
 			catch (std::out_of_range) {
-				std::wcout << "So big string for KEY in line " << line_number << " in key \"" << path << "\"" << std::endl;
+				std::wcout << L"So big string for KEY in line " << line_number << L" in key \"" << path << "\"" << std::endl;
 				return nullptr;
 			}
 		}
@@ -94,42 +94,42 @@ CamelliaConfigItem* read_key(const std::wstring &path)
 				continue;
 			}
 			catch (std::invalid_argument) {
-				std::wcout << "Invalid string for ALIGN in line " << line_number << " in key \"" << path << "\"" << std::endl;
+				std::wcout << L"Invalid string for ALIGN in line " << line_number << L" in key \"" << path << L"\"" << std::endl;
 				return nullptr;
 			}
 			catch (std::out_of_range) {
-				std::wcout << "So big string for ALIGN in line " << line_number << " in key \"" << path << "\"" << std::endl;
+				std::wcout << L"So big string for ALIGN in line " << line_number << L" in key \"" << path << L"\"" << std::endl;
 				return nullptr;
 			}
 		}
-		std::wcout << "Unresolved line \"" << line << "\" in key \"" << path << "\"" << std::endl;
+		std::wcout << L"Unresolved line \"" << line << L"\" in key \"" << path << L"\"" << std::endl;
 	}
 
 	input.close();
 
 	if (align == -1) {
-		std::wcout << "ALIGN NOT FOUND in key \"" << path << "\"" << std::endl;
+		std::wcout << L"ALIGN NOT FOUND in key \"" << path << L"\"" << std::endl;
 		return nullptr;
 	}
 
 	if (key_index != 52) {
-		std::wcout << "Invalid size for KEY("<<key_index<<") expected 52 in key \"" << path << "\"" << std::endl;
+		std::wcout << L"Invalid size for KEY(" << key_index << L") expected 52 in key \"" << path << L"\"" << std::endl;
 		return nullptr;
 	}
 
-	return new CamelliaConfigItem(align,key,games);
+	return new CamelliaConfigItem(align, key, games);
 }
 
-bool read_config(const std::wstring &dirpath, std::map<std::wstring,CamelliaConfigItem*>& config)
+bool read_config(const std::wstring& dirpath, std::map<std::wstring, CamelliaConfigItem*>& config)
 {
 	std::filesystem::path dir(dirpath);
 	if (!std::filesystem::is_directory(dir)) {
-		std::wcout << dirpath << " is not directory" << std::endl;
+		std::wcout << dirpath << L" is not directory" << std::endl;
 		return false;
 	}
 
 	for (const auto& entry : std::filesystem::directory_iterator(dir)) {
-		
+
 		const auto configItem = read_key(entry.path());
 		if (configItem != nullptr) {
 			config[entry.path().filename()] = configItem;

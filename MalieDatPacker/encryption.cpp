@@ -14,13 +14,13 @@ void encrypt_file_worker(const unsigned int* t_key, const wchar_t* src, const wc
 	}
 	FILE* input;
 	if (_wfopen_s(&input, src, L"rb") != 0) {
-		std::wcout << "File open error: " << src << std::endl;
+		std::wcout << L"File open error: " << src << std::endl;
 		return;
 	}
 
 	FILE* output;
 	if (_wfopen_s(&output, dst, L"wb") != 0) {
-		std::wcout << "File create error: " << dst << std::endl;
+		std::wcout << L"File create error: " << dst << std::endl;
 		return;
 	}
 
@@ -53,10 +53,10 @@ void encrypt_file_worker(const unsigned int* t_key, const wchar_t* src, const wc
 
 
 void encrypt_file_multithread(const CamelliaKey& key, const std::wstring& src, const std::wstring& dst, int thread_count) {
-	std::cout << "Encrypting... Each line's bytes: 0x" << std::hex << BlockLen << std::endl;
+	std::wcout << L"Encrypting... Each line's bytes: 0x" << std::hex << BlockLen << std::endl;
 	FILE* input;
 	if (_wfopen_s(&input, src.c_str(), L"rb") != 0) {
-		std::wcout << "File open error: " << src << std::endl;
+		std::wcout << L"File open error: " << src << std::endl;
 		return;
 	}
 
@@ -94,7 +94,7 @@ void encrypt_file_multithread(const CamelliaKey& key, const std::wstring& src, c
 		}
 		block_index += length;
 		length *= BlockLen;
-		std::cout << "Thread " << i << " offset " << offset << " length " << length << std::endl;
+		std::wcout << L"Thread " << i << L" offset " << offset << L" length " << length << std::endl;
 
 		const auto thread = new std::thread(encrypt_file_worker, key.data(), src.c_str(), thread_dsts[i].c_str(), offset, length);
 		threads.push_back(thread);
@@ -106,7 +106,7 @@ void encrypt_file_multithread(const CamelliaKey& key, const std::wstring& src, c
 
 	FILE* output;
 	if (_wfopen_s(&output, dst.c_str(), L"wb") != 0) {
-		std::wcout << "File create error: " << dst << std::endl;
+		std::wcout << L"File create error: " << dst << std::endl;
 		return;
 	}
 	uint8_t buffer[0x10000];
@@ -116,7 +116,7 @@ void encrypt_file_multithread(const CamelliaKey& key, const std::wstring& src, c
 	for (const auto thread_dst : thread_dsts) {
 		FILE* input;
 		if (_wfopen_s(&input, thread_dst.c_str(), L"rb") != 0) {
-			std::wcout << "File open error: " << src << std::endl;
+			std::wcout << L"File open error: " << src << std::endl;
 			return;
 		}
 		while (!feof(input)) {
@@ -142,13 +142,13 @@ void encrypt_file_singlethread(const CamelliaKey& key, const std::wstring& src, 
 {
 	FILE* input;
 	if (_wfopen_s(&input, src.c_str(), L"rb") != 0) {
-		std::wcout << "File open error: " << src << std::endl;
+		std::wcout << L"File open error: " << src << std::endl;
 		return;
 	}
 
 	FILE* output;
 	if (_wfopen_s(&output, dst.c_str(), L"wb") != 0) {
-		std::wcout << "File create error: " << dst << std::endl;
+		std::wcout << L"File create error: " << dst << std::endl;
 		return;
 	}
 

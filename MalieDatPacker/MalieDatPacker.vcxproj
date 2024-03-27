@@ -170,6 +170,37 @@
     <Text Include="keys\1.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Text>
+    <Text Include="keys\10.txt" />
+    <Text Include="keys\11.txt" />
+    <Text Include="keys\12.txt" />
+    <Text Include="keys\13.txt" />
+    <Text Include="keys\14.txt" />
+    <Text Include="keys\15.txt" />
+    <Text Include="keys\16.txt" />
+    <Text Include="keys\17.txt" />
+    <Text Include="keys\18.txt" />
+    <Text Include="keys\19.txt" />
+    <Text Include="keys\2.txt" />
+    <Text Include="keys\20.txt" />
+    <Text Include="keys\21.txt" />
+    <Text Include="keys\22.txt" />
+    <Text Include="keys\23.txt" />
+    <Text Include="keys\24.txt" />
+    <Text Include="keys\25.txt" />
+    <Text Include="keys\26.txt" />
+    <Text Include="keys\27.txt" />
+    <Text Include="keys\28.txt" />
+    <Text Include="keys\29.txt" />
+    <Text Include="keys\3.txt" />
+    <Text Include="keys\30.txt" />
+    <Text Include="keys\31.txt" />
+    <Text Include="keys\32.txt" />
+    <Text Include="keys\4.txt" />
+    <Text Include="keys\5.txt" />
+    <Text Include="keys\6.txt" />
+    <Text Include="keys\7.txt" />
+    <Text Include="keys\8.txt" />
+    <Text Include="keys\9.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

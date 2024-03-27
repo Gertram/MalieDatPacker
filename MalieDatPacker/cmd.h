@@ -29,6 +29,8 @@ const CamelliaConfigItem* initConfigByExpectHeader(CamelliaConfig config, const 
 
 const CamelliaConfigItem* initConfigByDatHeader(CamelliaConfig config, const std::vector<std::string>& arguments);
 
+const CamelliaConfigItem* initConfigByGame(CamelliaConfig config, const std::vector<std::string>& arguments);
+
 const CamelliaConfigItem* initConfigByInternalKeyFileName(CamelliaConfig config, const std::vector<std::string>& arguments);
 
 const CamelliaConfigItem* initConfigByExternalKeyFileName(CamelliaConfig config, const std::vector<std::string>& arguments);

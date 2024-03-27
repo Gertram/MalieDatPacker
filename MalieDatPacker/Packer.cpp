@@ -149,7 +149,7 @@ void Packer::generate_uncrypted(const std::wstring &dirpath,const std::wstring& 
 
 	FILE* output;
 	if (_wfopen_s(&output, filepath.c_str(), L"wb") != 0 || output == nullptr) {
-		std::wcout << "File create error: " << filepath;
+		std::wcout << L"File create error: " << filepath;
 		return;
 	}
 

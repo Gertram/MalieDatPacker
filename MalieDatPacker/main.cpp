@@ -11,12 +11,19 @@
 
 void pack(const std::filesystem::path &dirpath,const std::filesystem::path &filepath,uint32_t align) {
 	if (!std::filesystem::is_directory(dirpath)) {
-		std::wcout << "Input must be directory" << std::endl;
+		std::wcout << L"Input must be directory" << std::endl;
 		return;
 	}
 	
 	Packer packer(align);
 	packer.generate_uncrypted(dirpath,filepath);
+}
+
+void print_games(const std::vector<std::wstring>& games) {
+	std::wcout << L"Found config for games:" << std::endl;
+	for (size_t i = 0; i < games.size(); i++) {
+		std::wcout << (i + 1) << L"." << games[i] << std::endl;
+	}
 }
 
 int show_help() {
@@ -25,6 +32,7 @@ int show_help() {
 	std::cout << "[-encrpytion camellia] - sets the encryption type" << std::endl;
 	std::cout << "[-align <align>] - sets align for packaging, automatic if key is specified" << std::endl;
 	std::cout << "[-dat <*.dat>] - find the key by the header of the .dat file" << std::endl;
+	std::cout << "[-game <game>] - find the key by the game name" << std::endl;
 	std::cout << "[-expect \"<hex decimal> <hex decimal>\"] - searching for a key by header bytes" << std::endl;
 	std::cout << "[-offset <offset>] - sets offset for header bytes to 0x10 by default" << std::endl;
 	std::cout << "[-external_key <keypath>] - specifies an external key file" << std::endl;
@@ -70,7 +78,7 @@ int main(int argc, char* argv[]) {
 
 		if (useEncrypt) {
 			if (config == nullptr) {
-				std::wcout << "You need key for encryption" << std::endl;
+				std::wcout << L"You need key for encryption" << std::endl;
 				return -2;
 			}
 			const auto temppath = L"temp.dat";
@@ -87,7 +95,7 @@ int main(int argc, char* argv[]) {
 				align = config->getAlign();
 			}
 			else if (!parseAlign(arguments, align)) {
-				std::wcout << "You need align for pack" << std::endl;
+				std::wcout << L"You need align for pack" << std::endl;
 				return -5;
 			}
 
@@ -97,13 +105,13 @@ int main(int argc, char* argv[]) {
 	}
 	else if (mode == WorkMode::Encryption) {
 		if (config == nullptr) {
-			std::wcout << "You need key for encryption" << std::endl;
+			std::wcout << L"You need key for encryption" << std::endl;
 			return -2;
 		}
 		encrypt_file(config->getKey(), input, output, parseThread(arguments));
 	}
 	else {
-		std::wcout << "Mode undefined" << std::endl;
+		std::wcout << L"Mode undefined" << std::endl;
 	}
 	const auto end = clock();
 
