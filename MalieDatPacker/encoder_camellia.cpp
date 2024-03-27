@@ -3,7 +3,6 @@
 #include "encoder_camellia.h"
 
 
-
 const int BitLen = 32;
 const uint32_t ValueMask = (1u << BitLen) - 1;
 
@@ -28,7 +27,7 @@ void mutate_block(uint32_t *block){
     block[3] = mutate_value(block[3]);
 }
 
-void encrypt_block(const std::array<uint32_t, 52>& keytable, unsigned char* block, int offset) {
+void encrypt_block(const CamelliaKey& keytable, unsigned char* block, int offset) {
     
     const int total_rounds = 3;
 
@@ -98,7 +97,7 @@ void encrypt_block(const std::array<uint32_t, 52>& keytable, unsigned char* bloc
 
 }
 
-void encrypt_all(const std::array<uint32_t, 52>& key, unsigned char* data, const int size, int offset, bool printed)
+void encrypt(const CamelliaKey& key, unsigned char* data, const int size, int offset, bool printed)
 {
     int numOfBlocks = size / BlockLen;
     for (int line = 0; line < numOfBlocks; line++) {
