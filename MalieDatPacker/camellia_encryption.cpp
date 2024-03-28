@@ -1,33 +1,32 @@
 #include "camellia_tables.h"
 
-#include "encoder_camellia.h"
+#include "camellia_encryption.h"
 
 
-const int BitLen = 32;
-const uint32_t ValueMask = (1u << BitLen) - 1;
+static const int BitLen = 32;
+static const uint32_t ValueMask = (1u << BitLen) - 1;
 
-// Функция для поворота битов вправо
-uint32_t rotateRight(uint32_t value, int shift) {
+static uint32_t rotateRight(uint32_t value, int shift) {
     return (value >> shift) | (value << (BitLen - shift)) & ValueMask;
 }
 
-// Функция для поворота битов влево
-uint32_t rotateLeft(uint32_t value, int shift) {
+static uint32_t rotateLeft(uint32_t value, int shift) {
     return (value << shift) | (value >> (BitLen - shift)) & ValueMask;
 }
 
-uint32_t mutate_value(uint32_t value) {
+static uint32_t mutate_value(uint32_t value) {
     return (rotateLeft(value, 8) & 0x00FF00FF) | (rotateRight(value, 8) & 0xFF00FF00);
 }
 
-void MutateBlock(uint32_t *block){
+static void MutateBlock(uint32_t *block){
     block[0] = mutate_value(block[0]);
     block[1] = mutate_value(block[1]);
     block[2] = mutate_value(block[2]);
     block[3] = mutate_value(block[3]);
 }
 
-void encrypt_block(const CamelliaKey& keytable, unsigned char* block, int offset) {
+//https://github.com/satan53x/SExtractor/blob/main/tools/Malie/encoder_camellia.py
+static void encrypt_block(const CamelliaKey& keytable, unsigned char* block, int offset) {
     
     const int total_rounds = 3;
 
@@ -97,12 +96,14 @@ void encrypt_block(const CamelliaKey& keytable, unsigned char* block, int offset
 
 }
 
+///https://github.com/Dir-A/MalieTools
+
 static uint32_t MutateValue(uint32_t Value)
 {
     return (_rotl(Value, 8) & 0x00FF00FF) | (_rotr(Value, 8) & 0xFF00FF00);
 }
 
-void MutateBlock(uint32_t* pSrc, uint32_t* pMutated)
+static void MutateBlock(uint32_t* pSrc, uint32_t* pMutated)
 {
     pMutated[0] = MutateValue(pSrc[0]);
     pMutated[1] = MutateValue(pSrc[1]);
@@ -115,7 +116,7 @@ void MutateBlock(uint32_t* pSrc, uint32_t* pMutated)
 #define BYTE3(x) ((x >> 16) & 0xFF)
 #define BYTE4(x) ((x >> 24) & 0xFF)
 
-void decrypt_block(const CamelliaKey &decrypt_key, unsigned char* pBuffer, size_t posOffset)
+static void decrypt_block(const CamelliaKey &decrypt_key, unsigned char* pBuffer, size_t posOffset)
 {
     uint32_t  dst_block[4] = { 0 };
     uint32_t* src_block = (uint32_t*)pBuffer;
@@ -188,13 +189,6 @@ void decrypt_block(const CamelliaKey &decrypt_key, unsigned char* pBuffer, size_
     dst_block[3] ^= key[3];
 
     MutateBlock(dst_block, src_block);
-}
-
-
-void decrypt(const CamelliaKey& key, unsigned char* data, const int size, int offset, bool printed)
-{
-   
-
 }
 
 void CamelliaEncryption::encrypt(unsigned char* data, unsigned int data_length, unsigned int offset) const

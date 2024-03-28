@@ -5,10 +5,14 @@
 #include <array>
 #include <string>
 
-typedef std::array<uint32_t, 52> CamelliaKey;
+enum EncryptionType {
+	Malie,
+	Camellia128
+};
 
-struct CamelliaConfigItem {
-	CamelliaKey key;
+struct GameConfig {
+	EncryptionType encryption;
+	std::vector<uint32_t> key;
 	uint32_t align;
 	std::vector<std::wstring> games;
 };

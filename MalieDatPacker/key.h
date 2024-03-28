@@ -1,11 +1,16 @@
 #pragma once
 
-#include "CamelliaConfigItem.h"
+#include "GameConfig.h"
 #include <vector>
+#include <map>
 
 
-typedef std::map<std::wstring, CamelliaConfigItem> CamelliaConfig;
+const wchar_t UTF8_MAGIC[] = { 0xEF,0xBB,0xBF };
 
-bool read_key(const std::wstring &path, CamelliaConfigItem &configItem);
+const uint8_t magic_length = sizeof(UTF8_MAGIC) / sizeof(wchar_t);
 
-bool read_config(const std::wstring &dirpath, CamelliaConfig &config);
+typedef std::map<std::wstring, GameConfig> Config;
+
+bool read_key(const std::wstring &path, GameConfig &configItem);
+
+bool read_config(const std::wstring &dirpath, Config &config);

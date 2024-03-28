@@ -1,0 +1,11 @@
+GAMES
+Dies irae ~Amantes amentes~ 4:3 Resolution Patch
+ALIGN
+1024
+ENCRYPTION
+Malie
+KEY
+1467496503
+1161045092
+1786406741
+1949909092

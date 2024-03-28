@@ -15,18 +15,16 @@ const wchar_t UTF16LE_MAGIC[] = { 0xFF,0xFE };
 
 const wchar_t UTF16BE_MAGIC[] = { 0xFE,0xFF };
 
-const wchar_t UTF8_MAGIC[] = { 0xEF,0xBB,0xBF };
-
-const uint8_t magic_length = sizeof(UTF8_MAGIC) / sizeof(wchar_t);
 
 enum ReadState {
 	None,
 	Games,
 	Align,
+	Encryption,
 	Key
 };
 
-bool read_key(const std::wstring& path, CamelliaConfigItem &configItem)
+bool read_key(const std::wstring& path, GameConfig &configItem)
 {
 	std::wifstream input(path);
 
@@ -47,6 +45,7 @@ bool read_key(const std::wstring& path, CamelliaConfigItem &configItem)
 
 	auto &games = configItem.games;
 	auto& align = configItem.align;
+	auto& encryption = configItem.encryption;
 	align = -1;
 	auto &key = configItem.key;
 
@@ -69,27 +68,44 @@ bool read_key(const std::wstring& path, CamelliaConfigItem &configItem)
 			state = ReadState::Align;
 			continue;
 		}
+		if (line == L"ENCRYPTION") {
+			state = ReadState::Encryption;
+			continue;
+		}
 		if (line == L"KEY") {
 			state = ReadState::Key;
 			continue;
 		}
 		if (state == ReadState::Key) {
 			try {
-				key[key_index] = std::stoul(line);
+				key.push_back(std::stoul(line));
 				key_index++;
 				continue;
 			}
 			catch (std::invalid_argument) {
-				std::wcout << L"Invalid string for KEY in line " << line_number << L" in key \"" << path << "\"" << std::endl;
+				std::wcout << L"Invalid number for KEY in line " << line_number << L" in key \"" << path << "\"" << std::endl;
 				return false;
 			}
 			catch (std::out_of_range) {
-				std::wcout << L"So big string for KEY in line " << line_number << L" in key \"" << path << "\"" << std::endl;
+				std::wcout << L"So big number for KEY in line " << line_number << L" in key \"" << path << "\"" << std::endl;
 				return false;
 			}
 		}
 		if (state == ReadState::Games) {
 			games.push_back(line);
+			continue;
+		}
+		if (state == ReadState::Encryption) {
+			if (line == L"Malie") {
+				encryption = EncryptionType::Malie;
+			}
+			else if (line == L"Camellia") {
+				encryption = EncryptionType::Camellia128;
+			}
+			else {
+				std::wcout << L"Undefined encryption in line " << line_number << L" in key \"" << path << "\"" << std::endl;
+				return false;
+			}
 			continue;
 		}
 		if (state == ReadState::Align) {
@@ -98,11 +114,11 @@ bool read_key(const std::wstring& path, CamelliaConfigItem &configItem)
 				continue;
 			}
 			catch (std::invalid_argument) {
-				std::wcout << L"Invalid string for ALIGN in line " << line_number << L" in key \"" << path << L"\"" << std::endl;
+				std::wcout << L"Invalid number for ALIGN in line " << line_number << L" in key \"" << path << L"\"" << std::endl;
 				return false;
 			}
 			catch (std::out_of_range) {
-				std::wcout << L"So big string for ALIGN in line " << line_number << L" in key \"" << path << L"\"" << std::endl;
+				std::wcout << L"So big number for ALIGN in line " << line_number << L" in key \"" << path << L"\"" << std::endl;
 				return false;
 			}
 		}
@@ -116,15 +132,10 @@ bool read_key(const std::wstring& path, CamelliaConfigItem &configItem)
 		return false;
 	}
 
-	if (key_index != 52) {
-		std::wcout << L"Invalid size for KEY(" << key_index << L") expected 52 in key \"" << path << L"\"" << std::endl;
-		return false;
-	}
-
 	return true;
 }
 
-bool read_config(const std::wstring& dirpath, CamelliaConfig & config)
+bool read_config(const std::wstring& dirpath, Config & config)
 {
 	std::filesystem::path dir(dirpath);
 	if (!std::filesystem::is_directory(dir)) {
@@ -134,10 +145,10 @@ bool read_config(const std::wstring& dirpath, CamelliaConfig & config)
 
 	for (const auto& entry : std::filesystem::directory_iterator(dir)) {
 
-		CamelliaConfigItem configItem;
+		GameConfig configItem;
 		if (read_key(entry.path(),configItem)) {
 			
-			config[entry.path().filename()] = std::move(configItem);
+			config[entry.path().filename()] = configItem;
 		}
 	}
 	return true;

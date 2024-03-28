@@ -29,14 +29,14 @@ void print_games(const std::vector<std::wstring>& games) {
 int show_help() {
 	std::cout << "Usage:" << std::endl;
 	std::cout << "[-mode pack|encrypt] - sets the operating mode of the packer or encryptor" << std::endl;
-	std::cout << "[-encrpytion camellia] - sets the encryption type" << std::endl;
 	std::cout << "[-align <align>] - sets align for packaging, automatic if key is specified" << std::endl;
 	std::cout << "[-dat <*.dat>] - find the key by the header of the .dat file" << std::endl;
 	std::cout << "[-game <game>] - find the key by the game name" << std::endl;
 	std::cout << "[-expect \"<hex decimal> <hex decimal>\"] - searching for a key by header bytes" << std::endl;
 	std::cout << "[-offset <offset>] - sets offset for header bytes to 0x10 by default" << std::endl;
 	std::cout << "[-external_key <keypath>] - specifies an external key file" << std::endl;
-	std::cout << "[-key <keyname>] - searching for an internal key by name" << std::endl;
+	std::cout << "[-internal_key <keyname>] - searching for an internal key by name" << std::endl;
+	std::cout << "[-key <keyname> -encryption <camellia|malie> -align <align>] - set key, encryption and align" << std::endl;
 	std::cout << "[-encrypt 0|1] - whether to use encryption after the packer" << std::endl;
 	std::cout << "[-thread <threads>] - count of thread for encryption" << std::endl;
 	std::cout << "[-wait] - wait any key after done" << std::endl;
@@ -44,8 +44,10 @@ int show_help() {
 	return 0;
 }
 
-int work(const std::vector<std::string> &arguments) {
-
+int work(std::vector<std::string> &arguments) {
+	if (arguments.size() == 0) {
+		return show_help();
+	}
 	std::wstring input;
 
 	if (!parseInput(arguments, input)) {
@@ -78,7 +80,7 @@ int work(const std::vector<std::string> &arguments) {
 
 			pack(input, temppath, config.align);
 
-			encrypt_file(config.encrption, temppath, output, parseThread(arguments));
+			encrypt_file(config.encryption, temppath, output, parseThread(arguments));
 
 			std::filesystem::remove(temppath);
 		}
@@ -101,14 +103,14 @@ int work(const std::vector<std::string> &arguments) {
 			std::wcout << L"You need key for encryption" << std::endl;
 			return -2;
 		}
-		encrypt_file(config.encrption, input, output, parseThread(arguments));
+		encrypt_file(config.encryption, input, output, parseThread(arguments));
 	}
 	else if (mode == WorkMode::Decryption) {
 		if (!isConfigLoad) {
 			std::wcout << L"You need key for decryption" << std::endl;
 			return -2;
 		}
-		decrypt_file(config.encrption, input, output, parseThread(arguments));
+		decrypt_file(config.encryption, input, output, parseThread(arguments));
 	}
 	else {
 		std::wcout << L"Mode undefined" << std::endl;
@@ -124,10 +126,6 @@ int main(int argc, char* argv[]) {
 
 	for (int i = 1; i < argc; i++) {
 		arguments.push_back(argv[i]);
-	}
-
-	if (arguments.size() == 0) {
-		return show_help();
 	}
 
 	const auto result = work(arguments);

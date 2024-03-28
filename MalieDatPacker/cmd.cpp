@@ -9,6 +9,8 @@
 #include "utils.h"
 #include "key.h"
 #include "encryption.h"
+#include "camellia_encryption.h"
+#include "malie_encryption.h"
 
 WorkMode parseWorkMode(const std::vector<std::string>& arguments)
 {
@@ -60,8 +62,11 @@ bool parseEncryption(const std::vector<std::string>& arguments, EncryptionType& 
 		return false;
 	}
 	const auto encoderStr = arguments[encoder_pos + 1];
-	if (encoderStr == "Camellia" || encoderStr == "Camellia128") {
+	if (encoderStr == "camellia" || encoderStr == "Camellia") {
 		return EncryptionType::Camellia128;
+	}
+	if (encoderStr == "malie" || encoderStr == "Malie") {
+		return EncryptionType::Malie;
 	}
 
 	std::cout << "Unknown encryption: " << encoderStr << std::endl;
@@ -69,7 +74,26 @@ bool parseEncryption(const std::vector<std::string>& arguments, EncryptionType& 
 	return false;
 }
 
-bool initConfigByExpectHeader(CamelliaConfig config,CamelliaConfigItem &configItem, const std::vector<uint8_t>& expect_header, int checkOffset) {
+const IEncryption* parseEncryption(const GameConfig& configItem) {
+	if (configItem.encryption == EncryptionType::Camellia128) {
+		CamelliaKey key;
+		for (size_t i = 0; i < key.size(); i++) {
+			key[i] = configItem.key[i];
+		}
+		return new CamelliaEncryption(key);
+	}
+	if (configItem.encryption == EncryptionType::Malie) {
+		MalieKey key;
+		for (size_t i = 0; i < key.size(); i++) {
+			key[i] = configItem.key[i];
+		}
+		return new MalieEncryption(key);
+	}
+
+	return nullptr;
+}
+
+bool initConfigByExpectHeader(Config config,GameConfig &configItem, const std::vector<uint8_t>& expect_header, int checkOffset) {
 
 	if (expect_header.size() == 0) {
 		return false;
@@ -81,11 +105,11 @@ bool initConfigByExpectHeader(CamelliaConfig config,CamelliaConfigItem &configIt
 
 	for (const auto &item : config)
 	{
-		memset(bs, 0, sizeof(bs));
+		const auto encryption = parseEncryption(configItem);
 
-		CamelliaEncryption encryption(item.second.key);
+		encryption->encrypt(bs, sizeof(bs), checkOffset);
 
-		encryption.encrypt(bs, sizeof(bs), checkOffset);
+		delete encryption;
 
 		if (memcmp(bs, expect_header.data(), expect_header.size()) == 0) {
 			std::wcout << L"Find expect config : " << item.first << std::endl;
@@ -97,7 +121,7 @@ bool initConfigByExpectHeader(CamelliaConfig config,CamelliaConfigItem &configIt
 	return false;
 }
 
-bool initConfigByExpectHeader(CamelliaConfig config, CamelliaConfigItem& configItem, const std::vector<std::string>& arguments) {
+bool initConfigByExpectHeader(Config config, GameConfig& configItem, const std::vector<std::string>& arguments) {
 	const auto expectPos = findPosition<std::string>(arguments, "-expect");
 
 	if (expectPos == -1) {
@@ -127,7 +151,7 @@ bool initConfigByExpectHeader(CamelliaConfig config, CamelliaConfigItem& configI
 }
 
 
-bool initConfigByDatHeader(CamelliaConfig config, CamelliaConfigItem& configItem, const std::vector<std::string>& arguments) {
+bool initConfigByDatHeader(Config config, GameConfig& configItem, const std::vector<std::string>& arguments) {
 	const auto expectPos = findPosition<std::string>(arguments, "-dat");
 
 	if (expectPos == -1) {
@@ -166,7 +190,7 @@ bool initConfigByDatHeader(CamelliaConfig config, CamelliaConfigItem& configItem
 	return initConfigByExpectHeader(config,configItem, expect_header, checkOffset);
 }
 
-bool initConfigByGame(CamelliaConfig config, CamelliaConfigItem& configItem, const std::vector<std::string>& arguments)
+bool initConfigByGame(Config config, GameConfig& configItem, const std::vector<std::string>& arguments)
 {
 	const auto gamePos = findPosition<std::string>(arguments, "-game");
 
@@ -183,7 +207,7 @@ bool initConfigByGame(CamelliaConfig config, CamelliaConfigItem& configItem, con
 
 	std::wstring game = std::filesystem::path(gameStr).filename().wstring();
 
-	std::vector<const CamelliaConfigItem*> results;
+	std::vector<const GameConfig*> results;
 
 	std::wcout << L"Search results: " << std::endl;
 
@@ -215,8 +239,8 @@ bool initConfigByGame(CamelliaConfig config, CamelliaConfigItem& configItem, con
 }
 
 
-bool initConfigByInternalKeyFileName(CamelliaConfig config, CamelliaConfigItem& configItem, const std::vector<std::string>& arguments) {
-	const auto keyPos = findPosition<std::string>(arguments, "-key");
+bool initConfigByInternalKeyFileName(Config config, GameConfig& configItem, const std::vector<std::string>& arguments) {
+	const auto keyPos = findPosition<std::string>(arguments, "-internal_key");
 
 	if (keyPos == -1) {
 		return false;
@@ -241,7 +265,73 @@ bool initConfigByInternalKeyFileName(CamelliaConfig config, CamelliaConfigItem& 
 	return false;
 }
 
-bool initConfigByExternalKeyFileName(CamelliaConfig config, CamelliaConfigItem& configItem, const std::vector<std::string>& arguments) {
+bool initConfigByKeyFileName(Config config, GameConfig& configItem, const std::vector<std::string>& arguments) {
+	const auto keyPos = findPosition<std::string>(arguments, "-key");
+
+	if (keyPos == -1) {
+		return false;
+	}
+
+	if (keyPos + 1 == arguments.size()) {
+		std::wcout << L"Parse key error" << std::endl;
+		return false;
+	}
+
+
+	const auto& keyStr = arguments[keyPos + 1];
+
+	std::wifstream input(keyStr);
+
+	if (!input.is_open()) {
+		std::cout << "File \"" << keyStr << "\" was not opened" << std::endl;
+		return false;
+	}
+
+	wchar_t magic[magic_length];
+
+	input.read(magic, magic_length);
+
+
+	if (wmemcmp(magic, UTF8_MAGIC, magic_length) != 0) {
+		input.seekg(0);
+	}
+	input.imbue(std::locale(".UTF-8"));
+
+	int line_number = 0;
+	std::wstring line;
+	auto &key = configItem.key;
+	while (!input.eof()) {
+		std::getline(input, line);
+		try {
+			const auto k = std::stoul(line);
+			key.push_back(k);
+		}
+		catch (std::invalid_argument) {
+			std::wcout << L"Invalid number in line " << line_number << std::endl;
+			return false;
+		}
+		catch (std::out_of_range) {
+			std::wcout << L"So big number in line " << line_number << std::endl;
+			return false;
+		}
+		line_number++;
+	}
+
+	if (!parseEncryption(arguments, configItem.encryption)) {
+		std::wcout << L"Key option need encryption" << std::endl;
+		return false;
+	}
+
+
+	if (!parseAlign(arguments, configItem.align)) {
+		std::wcout << L"Key option need align" << std::endl;
+		return false;
+	}
+
+	return true;
+}
+
+bool initConfigByExternalKeyFileName(Config config, GameConfig& configItem, const std::vector<std::string>& arguments) {
 	const auto expectPos = findPosition<std::string>(arguments, "-external_key");
 
 	if (expectPos == -1) {
@@ -258,7 +348,7 @@ bool initConfigByExternalKeyFileName(CamelliaConfig config, CamelliaConfigItem& 
 	return read_key(std::filesystem::path(keyStr),configItem);
 }
 
-bool parseCamelliaConfig(const std::vector<std::string>& arguments,const CamelliaConfig &config, CamelliaConfigItem& configItem) {
+bool parseConfig(const std::vector<std::string>& arguments,const Config &config, GameConfig& configItem) {
 
 	if (initConfigByDatHeader(config, configItem, arguments)) {
 		return true;
@@ -267,9 +357,10 @@ bool parseCamelliaConfig(const std::vector<std::string>& arguments,const Camelli
 		return true;
 	}
 
-	if (initConfigByExternalKeyFileName(config, configItem, arguments)) {
+	if (initConfigByKeyFileName(config, configItem, arguments)) {
 		return true;
 	}
+
 	if (initConfigByInternalKeyFileName(config, configItem, arguments)) {
 		return true;
 	}
@@ -279,36 +370,28 @@ bool parseCamelliaConfig(const std::vector<std::string>& arguments,const Camelli
 	}
 	return false;
 }
-bool parseCamelliaConfig(const std::vector<std::string>& arguments, ConfigItem &configItem) {
-	CamelliaConfig config;
+
+bool parseConfig(const std::vector<std::string>& arguments, ConfigItem &configItem) {
+	Config config;
 
 	if (!read_config(L"keys", config)) {
 		return false;
 	}
-	CamelliaConfigItem camelliaConfigItem;
-	if(!parseCamelliaConfig(arguments, config,camelliaConfigItem)){
+	GameConfig gameConfig;
+	if(!parseConfig(arguments, config,gameConfig)){
 		return false;
 	}
 
-	configItem.games = std::move(camelliaConfigItem.games);
-	configItem.align = camelliaConfigItem.align;
-	configItem.encrption = new CamelliaEncryption(camelliaConfigItem.key);
+	configItem.games = gameConfig.games;
+	configItem.align = gameConfig.align;
+	
+	configItem.encryption = parseEncryption(gameConfig);
+
+	uint8_t buffer[16];
+	memset(buffer, 0, sizeof(buffer));
+	configItem.encryption->encrypt(buffer, sizeof(buffer), 0x10);
 
 	return true;
-}
-bool parseConfig(const std::vector<std::string>& arguments,ConfigItem &configItem) {
-
-	EncryptionType encoder;
-
-	if (!parseEncryption(arguments, encoder)) {
-		return false;
-	}
-
-	if (encoder == EncryptionType::Camellia128) {
-		return parseCamelliaConfig(arguments, configItem);
-	}
-
-	return false;
 }
 
 bool parseUseEncrypt(const std::vector<std::string>& arguments)

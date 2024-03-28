@@ -144,25 +144,27 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cmd.cpp" />
-    <ClCompile Include="encoder_camellia.cpp" />
+    <ClCompile Include="camellia_encryption.cpp" />
     <ClCompile Include="encryption.cpp" />
     <ClCompile Include="File.cpp" />
     <ClCompile Include="Index.cpp" />
     <ClCompile Include="key.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="malie_encryption.cpp" />
     <ClCompile Include="Packer.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CamelliaConfigItem.h" />
+    <ClInclude Include="GameConfig.h" />
     <ClInclude Include="camellia_tables.h" />
     <ClInclude Include="cmd.h" />
-    <ClInclude Include="encoder_camellia.h" />
+    <ClInclude Include="camellia_encryption.h" />
     <ClInclude Include="encryption.h" />
     <ClInclude Include="File.h" />
     <ClInclude Include="IEncryption.h" />
     <ClInclude Include="Index.h" />
     <ClInclude Include="key.h" />
+    <ClInclude Include="malie_encryption.h" />
     <ClInclude Include="Packer.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
@@ -195,7 +197,24 @@
     <Text Include="keys\30.txt" />
     <Text Include="keys\31.txt" />
     <Text Include="keys\32.txt" />
+    <Text Include="keys\33.txt" />
+    <Text Include="keys\34.txt" />
+    <Text Include="keys\35.txt" />
+    <Text Include="keys\36.txt" />
+    <Text Include="keys\37.txt" />
+    <Text Include="keys\38.txt" />
+    <Text Include="keys\39.txt" />
     <Text Include="keys\4.txt" />
+    <Text Include="keys\40.txt" />
+    <Text Include="keys\41.txt" />
+    <Text Include="keys\42.txt" />
+    <Text Include="keys\43.txt" />
+    <Text Include="keys\44.txt" />
+    <Text Include="keys\45.txt" />
+    <Text Include="keys\46.txt" />
+    <Text Include="keys\47.txt" />
+    <Text Include="keys\48.txt" />
+    <Text Include="keys\49.txt" />
     <Text Include="keys\5.txt" />
     <Text Include="keys\6.txt" />
     <Text Include="keys\7.txt" />

@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include "encoder_camellia.h"
+#include "IEncryption.h"
 
 #include <string>
 

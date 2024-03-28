@@ -21,7 +21,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="encoder_camellia.cpp">
+    <ClCompile Include="camellia_encryption.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="Index.cpp">
@@ -45,9 +45,12 @@
     <ClCompile Include="key.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="malie_encryption.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="encoder_camellia.h">
+    <ClInclude Include="camellia_encryption.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="camellia_tables.h">
@@ -68,7 +71,7 @@
     <ClInclude Include="encryption.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="CamelliaConfigItem.h">
+    <ClInclude Include="GameConfig.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="cmd.h">
@@ -80,41 +83,157 @@
     <ClInclude Include="IEncryption.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="malie_encryption.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="keys\1.txt">
       <Filter>Файлы ресурсов\keys</Filter>
     </Text>
-    <Text Include="keys\10.txt" />
-    <Text Include="keys\11.txt" />
-    <Text Include="keys\12.txt" />
-    <Text Include="keys\13.txt" />
-    <Text Include="keys\14.txt" />
-    <Text Include="keys\15.txt" />
-    <Text Include="keys\16.txt" />
-    <Text Include="keys\17.txt" />
-    <Text Include="keys\18.txt" />
-    <Text Include="keys\19.txt" />
-    <Text Include="keys\2.txt" />
-    <Text Include="keys\20.txt" />
-    <Text Include="keys\21.txt" />
-    <Text Include="keys\22.txt" />
-    <Text Include="keys\23.txt" />
-    <Text Include="keys\24.txt" />
-    <Text Include="keys\25.txt" />
-    <Text Include="keys\26.txt" />
-    <Text Include="keys\27.txt" />
-    <Text Include="keys\28.txt" />
-    <Text Include="keys\29.txt" />
-    <Text Include="keys\3.txt" />
-    <Text Include="keys\30.txt" />
-    <Text Include="keys\31.txt" />
-    <Text Include="keys\32.txt" />
-    <Text Include="keys\4.txt" />
-    <Text Include="keys\5.txt" />
-    <Text Include="keys\6.txt" />
-    <Text Include="keys\7.txt" />
-    <Text Include="keys\8.txt" />
-    <Text Include="keys\9.txt" />
+    <Text Include="keys\2.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\3.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\4.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\5.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\6.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\7.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\8.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\9.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\10.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\11.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\12.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\13.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\14.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\15.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\16.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\17.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\18.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\19.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\20.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\21.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\22.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\23.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\24.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\25.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\26.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\27.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\28.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\29.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\30.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\31.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\32.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\33.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\34.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\35.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\36.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\37.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\38.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\39.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\40.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\41.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\42.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\43.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\44.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\45.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\46.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\47.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\48.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
+    <Text Include="keys\49.txt">
+      <Filter>Файлы ресурсов\keys</Filter>
+    </Text>
   </ItemGroup>
 </Project>

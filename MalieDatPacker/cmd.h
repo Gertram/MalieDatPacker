@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CamelliaConfigItem.h"
+#include "GameConfig.h"
 #include "IEncryption.h"
 
 
@@ -9,17 +9,14 @@ const int DefaultCheckOffset = 0x10;
 struct ConfigItem {
 	std::vector<std::wstring> games;
 	uint32_t align;
-	IEncryption *encrption;
-};
-
-enum EncryptionType {
-	Camellia128
+	const IEncryption *encryption;
 };
 
 enum WorkMode {
 	Encryption,
 	Decryption,
 	Pack,
+	Unpack
 };
 
 WorkMode parseWorkMode(const std::vector<std::string>& arguments);
