@@ -3,15 +3,19 @@
 #include <string>
 #include <thread>
 
-#include "encoder_camellia.h"
-
+#include "IEncryption.h"
 #include "encryption.h"
 
-void encrypt_file_worker(const unsigned int* t_key, const wchar_t* src, const wchar_t* dst, int offset, const int length) {
-	std::array<uint32_t, 52> key;
-	for (int i = 0; i < key.size(); i++) {
-		key[i] = t_key[i];
-	}
+typedef void (*WorkerFunc)(const IEncryption* encryption,uint8_t *data,uint32_t data_length, uint32_t offset);
+
+static void encrypt_worker(const IEncryption* encryption, uint8_t* data, uint32_t data_length, uint32_t offset) {
+	encryption->encrypt(data, data_length, offset);
+}
+static void decrypt_worker(const IEncryption* encryption, uint8_t* data, uint32_t data_length, uint32_t offset) {
+	encryption->decrypt(data, data_length, offset);
+}
+
+static void file_worker(const IEncryption *encryption, const WorkerFunc worker, const wchar_t* src, const wchar_t* dst, int offset, const int length) {
 	FILE* input;
 	if (_wfopen_s(&input, src, L"rb") != 0) {
 		std::wcout << L"File open error: " << src << std::endl;
@@ -42,7 +46,7 @@ void encrypt_file_worker(const unsigned int* t_key, const wchar_t* src, const wc
 		if (count != need_to_read) {
 			count = count;
 		}
-		encrypt(key, buffer, count, offset, false);
+		worker(encryption, buffer, count, offset);
 		fwrite(buffer, sizeof(uint8_t), count, output);
 		offset += count;
 	}
@@ -51,9 +55,7 @@ void encrypt_file_worker(const unsigned int* t_key, const wchar_t* src, const wc
 	fclose(output);
 }
 
-
-void encrypt_file_multithread(const CamelliaKey& key, const std::wstring& src, const std::wstring& dst, int thread_count) {
-	std::wcout << L"Encrypting... Each line's bytes: 0x" << std::hex << BlockLen << std::endl;
+static void file_multithread(const IEncryption* encryption, WorkerFunc worker, const std::wstring& src, const std::wstring& dst, int thread_count) {
 	FILE* input;
 	if (_wfopen_s(&input, src.c_str(), L"rb") != 0) {
 		std::wcout << L"File open error: " << src << std::endl;
@@ -96,7 +98,7 @@ void encrypt_file_multithread(const CamelliaKey& key, const std::wstring& src, c
 		length *= BlockLen;
 		std::wcout << L"Thread " << i << L" offset " << offset << L" length " << length << std::endl;
 
-		const auto thread = new std::thread(encrypt_file_worker, key.data(), src.c_str(), thread_dsts[i].c_str(), offset, length);
+		const auto thread = new std::thread(file_worker, encryption, worker, src.c_str(), thread_dsts[i].c_str(), offset, length);
 		threads.push_back(thread);
 	}
 
@@ -134,11 +136,9 @@ void encrypt_file_multithread(const CamelliaKey& key, const std::wstring& src, c
 		_wremove(thread_dst.c_str());
 	}
 	fclose(output);
-
-	std::cout << "Encrypted." << std::endl;
 }
 
-void encrypt_file_singlethread(const CamelliaKey& key, const std::wstring& src, const std::wstring& dst)
+static void file_singlethread(const IEncryption* encryption, WorkerFunc worker, const std::wstring& src, const std::wstring& dst)
 {
 	FILE* input;
 	if (_wfopen_s(&input, src.c_str(), L"rb") != 0) {
@@ -162,7 +162,7 @@ void encrypt_file_singlethread(const CamelliaKey& key, const std::wstring& src, 
 			break;
 		}
 		
-		encrypt(key, buffer, count, offset, false);
+		worker(encryption,buffer, count, offset);
 		fwrite(buffer, sizeof(uint8_t), count, output);
 		offset += count;
 	}
@@ -171,11 +171,46 @@ void encrypt_file_singlethread(const CamelliaKey& key, const std::wstring& src, 
 	fclose(output);
 }
 
-void encrypt_file(const CamelliaKey& key, const std::wstring& src, const std::wstring& dst, const int thread_count)
+void encrypt_file_multithread(const IEncryption* encryption, const std::wstring& src, const std::wstring& dst, int thread_count)
 {
+	file_multithread(encryption, encrypt_worker, src, dst, thread_count);
+}
+
+void encrypt_file_singlethread(const IEncryption* encryption, const std::wstring& src, const std::wstring& dst)
+{
+	file_singlethread(encryption, encrypt_worker, src, dst);
+}
+
+void decrypt_file_multithread(const IEncryption* encryption, const std::wstring& src, const std::wstring& dst, int thread_count)
+{
+	file_multithread(encryption, decrypt_worker, src, dst, thread_count);
+}
+
+void decrypt_file_singlethread(const IEncryption* encryption, const std::wstring& src, const std::wstring& dst)
+{
+	file_singlethread(encryption, decrypt_worker, src, dst);
+}
+
+void encrypt_file(const IEncryption* encryption, const std::wstring& src, const std::wstring& dst, const int thread_count)
+{
+	std::wcout << "Encryption start..." << std::endl;
 	if (thread_count == 1) {
-		encrypt_file_singlethread(key, src, dst);
-		return;
+		encrypt_file_singlethread(encryption, src, dst);
 	}
-	encrypt_file_multithread(key, src, dst, thread_count);
+	else {
+		encrypt_file_multithread(encryption, src, dst, thread_count);
+	}
+	std::wcout << "Encryption end." << std::endl;
+}
+
+void decrypt_file(const IEncryption* encryption, const std::wstring& src, const std::wstring& dst, const int thread_count)
+{
+	std::wcout << "Decryption start..." << std::endl;
+	if (thread_count == 1) {
+		decrypt_file_singlethread(encryption, src, dst);
+	}
+	else {
+		decrypt_file_multithread(encryption, src, dst, thread_count);
+	}
+	std::wcout << "Decryption end." << std::endl;
 }

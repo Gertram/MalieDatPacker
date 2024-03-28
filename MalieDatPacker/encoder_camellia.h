@@ -5,7 +5,15 @@
 #include <string>
 
 #include "CamelliaConfigItem.h"
+#include "IEncryption.h"
 
-const int BlockLen = 0x10;
+class CamelliaEncryption :public IEncryption {
+public:
+	CamelliaEncryption(const CamelliaKey& key):m_key(key) {
 
-void encrypt(const CamelliaKey&key, unsigned char* data,const int size, int offset, bool printed = true);
+	}
+	void encrypt(unsigned char* data, unsigned int data_length, unsigned int offset) const override;
+	void decrypt(unsigned char* data, unsigned int data_length, unsigned int offset) const override;
+private:
+	const CamelliaKey m_key;
+};

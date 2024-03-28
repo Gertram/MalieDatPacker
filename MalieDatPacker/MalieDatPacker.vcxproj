@@ -143,7 +143,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CamelliaConfigItem.cpp" />
     <ClCompile Include="cmd.cpp" />
     <ClCompile Include="encoder_camellia.cpp" />
     <ClCompile Include="encryption.cpp" />
@@ -161,6 +160,7 @@
     <ClInclude Include="encoder_camellia.h" />
     <ClInclude Include="encryption.h" />
     <ClInclude Include="File.h" />
+    <ClInclude Include="IEncryption.h" />
     <ClInclude Include="Index.h" />
     <ClInclude Include="key.h" />
     <ClInclude Include="Packer.h" />

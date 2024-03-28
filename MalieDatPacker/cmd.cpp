@@ -17,12 +17,20 @@ WorkMode parseWorkMode(const std::vector<std::string>& arguments)
 		return WorkMode::Pack;
 	}
 	if (modePos + 1 == arguments.size()) {
+		std::wcout << "Parse mode error. Used pack" << std::endl;
 		return WorkMode::Pack;
 	}
 	const auto offsetStr = arguments[modePos + 1];
 	if (offsetStr == "encrypt") {
 		return WorkMode::Encryption;
 	}
+	if (offsetStr == "decrypt") {
+		return WorkMode::Decryption;
+	}
+	if (offsetStr == "pack") {
+		return WorkMode::Pack;
+	}
+	std::wcout << "Undefined mode error. Used pack" << std::endl;
 	return WorkMode::Pack;
 }
 
@@ -32,6 +40,7 @@ int parseCheckOffset(const std::vector<std::string>& arguments) {
 		return DefaultCheckOffset;
 	}
 	if (offsetPos + 1 == arguments.size()) {
+		std::wcout << "Parse offset error. Used default " << std::hex << DefaultCheckOffset << std::dec << std::endl;
 		return DefaultCheckOffset;
 	}
 	const auto offsetStr = arguments[offsetPos + 1];
@@ -60,41 +69,44 @@ bool parseEncryption(const std::vector<std::string>& arguments, EncryptionType& 
 	return false;
 }
 
-const CamelliaConfigItem* initConfigByExpectHeader(CamelliaConfig config, const std::vector<uint8_t>& expect_header, int checkOffset) {
+bool initConfigByExpectHeader(CamelliaConfig config,CamelliaConfigItem &configItem, const std::vector<uint8_t>& expect_header, int checkOffset) {
 
 	if (expect_header.size() == 0) {
-		return nullptr;
+		return false;
 	}
-
 
 	printf("Try to find expect...\n");
 
 	uint8_t bs[16];
 
-	for (const auto configItem : config)
+	for (const auto &item : config)
 	{
 		memset(bs, 0, sizeof(bs));
 
-		encrypt(configItem.second->getKey(), bs, sizeof(bs), checkOffset, false);
+		CamelliaEncryption encryption(item.second.key);
+
+		encryption.encrypt(bs, sizeof(bs), checkOffset);
 
 		if (memcmp(bs, expect_header.data(), expect_header.size()) == 0) {
-			std::wcout << L"Find expect config : " << configItem.first << std::endl;
-			return configItem.second;
+			std::wcout << L"Find expect config : " << item.first << std::endl;
+			configItem = item.second;
+			return true;
 		}
 	}
 	printf("Cannot found expect ExpectHeader.\n");
-	return nullptr;
+	return false;
 }
 
-const CamelliaConfigItem* initConfigByExpectHeader(CamelliaConfig config, const std::vector<std::string>& arguments) {
+bool initConfigByExpectHeader(CamelliaConfig config, CamelliaConfigItem& configItem, const std::vector<std::string>& arguments) {
 	const auto expectPos = findPosition<std::string>(arguments, "-expect");
 
 	if (expectPos == -1) {
-		return nullptr;
+		return false;
 	}
 
 	if (expectPos + 1 == arguments.size()) {
-		return nullptr;
+		std::wcout << "Parse expected header error" << std::endl;
+		return false;
 	}
 
 	const auto& expectStr = arguments[expectPos + 1];
@@ -111,19 +123,20 @@ const CamelliaConfigItem* initConfigByExpectHeader(CamelliaConfig config, const 
 
 	const auto checkOffset = parseCheckOffset(arguments);
 
-	return initConfigByExpectHeader(config, expect_header, checkOffset);
+	return initConfigByExpectHeader(config,configItem, expect_header, checkOffset);
 }
 
 
-const CamelliaConfigItem* initConfigByDatHeader(CamelliaConfig config, const std::vector<std::string>& arguments) {
+bool initConfigByDatHeader(CamelliaConfig config, CamelliaConfigItem& configItem, const std::vector<std::string>& arguments) {
 	const auto expectPos = findPosition<std::string>(arguments, "-dat");
 
 	if (expectPos == -1) {
-		return nullptr;
+		return false;
 	}
 
 	if (expectPos + 1 == arguments.size()) {
-		return nullptr;
+		std::wcout << "Parse dat error" << std::endl;
+		return false;
 	}
 
 	const auto& datpath = arguments[expectPos + 1];
@@ -131,7 +144,7 @@ const CamelliaConfigItem* initConfigByDatHeader(CamelliaConfig config, const std
 	FILE* file;
 	const auto result = fopen_s(&file, datpath.c_str(), "rb");
 	if (result != 0 || file == nullptr) {
-		return nullptr;
+		return false;
 	}
 
 	uint8_t buffer[8];
@@ -150,36 +163,37 @@ const CamelliaConfigItem* initConfigByDatHeader(CamelliaConfig config, const std
 
 	fclose(file);
 
-	return initConfigByExpectHeader(config, expect_header, checkOffset);
+	return initConfigByExpectHeader(config,configItem, expect_header, checkOffset);
 }
 
-const CamelliaConfigItem* initConfigByGame(CamelliaConfig config, const std::vector<std::string>& arguments)
+bool initConfigByGame(CamelliaConfig config, CamelliaConfigItem& configItem, const std::vector<std::string>& arguments)
 {
 	const auto gamePos = findPosition<std::string>(arguments, "-game");
 
 	if (gamePos == -1) {
-		return nullptr;
+		return false;
 	}
 
 	if (gamePos + 1 == arguments.size()) {
-		return nullptr;
+		std::wcout << "Parse game error" << std::endl;
+		return false;
 	}
 
 	const auto& gameStr = arguments[gamePos + 1];
 
 	std::wstring game = std::filesystem::path(gameStr).filename().wstring();
 
-	std::vector<CamelliaConfigItem*> results;
+	std::vector<const CamelliaConfigItem*> results;
 
 	std::wcout << L"Search results: " << std::endl;
 
 	size_t index = 1;
 
 	for (const auto& pair : config) {
-		for (const auto& name : pair.second->getGames()) {
+		for (const auto& name : pair.second.games) {
 			if (name.find(game) != std::wstring::npos) {
 				std::wcout << index << L"." << name << std::endl;
-				results.push_back(pair.second);
+				results.push_back(&pair.second);
 				index++;
 			}
 		}
@@ -193,88 +207,108 @@ const CamelliaConfigItem* initConfigByGame(CamelliaConfig config, const std::vec
 
 	if (number < 1 || number > results.size()) {
 		std::wcout << L"Incorrect input" << std::endl;
-		return nullptr;
+		return false;
 	}
 
-	return results[number-1];
+	configItem = *results[number - 1];
+	return true;
 }
 
 
-const CamelliaConfigItem* initConfigByInternalKeyFileName(CamelliaConfig config, const std::vector<std::string>& arguments) {
-	const auto expectPos = findPosition<std::string>(arguments, "-key");
+bool initConfigByInternalKeyFileName(CamelliaConfig config, CamelliaConfigItem& configItem, const std::vector<std::string>& arguments) {
+	const auto keyPos = findPosition<std::string>(arguments, "-key");
 
-	if (expectPos == -1) {
-		return nullptr;
+	if (keyPos == -1) {
+		return false;
 	}
 
-	if (expectPos + 1 == arguments.size()) {
-		return nullptr;
+	if (keyPos + 1 == arguments.size()) {
+		std::wcout << "Parse key error" << std::endl;
+		return false;
 	}
 
-	const auto& keyStr = arguments[expectPos + 1];
+	const auto& keyStr = arguments[keyPos + 1];
 
 	std::wstring filename = std::filesystem::path(keyStr).filename().wstring();
 
 	for (const auto& pair : config) {
 		if (pair.first.find(filename) != std::wstring::npos) {
-			return pair.second;
+			configItem = pair.second;
+			return true;
 		}
 	}
 
-	return nullptr;
+	return false;
 }
 
-const CamelliaConfigItem* initConfigByExternalKeyFileName(CamelliaConfig config, const std::vector<std::string>& arguments) {
+bool initConfigByExternalKeyFileName(CamelliaConfig config, CamelliaConfigItem& configItem, const std::vector<std::string>& arguments) {
 	const auto expectPos = findPosition<std::string>(arguments, "-external_key");
 
 	if (expectPos == -1) {
-		return nullptr;
+		return false;
 	}
 
 	if (expectPos + 1 == arguments.size()) {
-		return nullptr;
+		std::wcout << "Parse external_key error" << std::endl;
+		return false;
 	}
 
 	const auto& keyStr = arguments[expectPos + 1];
 
-	return read_key(std::filesystem::path(keyStr));
+	return read_key(std::filesystem::path(keyStr),configItem);
 }
 
-const CamelliaConfigItem* initConfig(const std::vector<std::string>& arguments) {
+bool parseCamelliaConfig(const std::vector<std::string>& arguments,const CamelliaConfig &config, CamelliaConfigItem& configItem) {
+
+	if (initConfigByDatHeader(config, configItem, arguments)) {
+		return true;
+	}
+	if (initConfigByExpectHeader(config, configItem, arguments)) {
+		return true;
+	}
+
+	if (initConfigByExternalKeyFileName(config, configItem, arguments)) {
+		return true;
+	}
+	if (initConfigByInternalKeyFileName(config, configItem, arguments)) {
+		return true;
+	}
+
+	if (initConfigByGame(config, configItem, arguments)) {
+		return true;
+	}
+	return false;
+}
+bool parseCamelliaConfig(const std::vector<std::string>& arguments, ConfigItem &configItem) {
+	CamelliaConfig config;
+
+	if (!read_config(L"keys", config)) {
+		return false;
+	}
+	CamelliaConfigItem camelliaConfigItem;
+	if(!parseCamelliaConfig(arguments, config,camelliaConfigItem)){
+		return false;
+	}
+
+	configItem.games = std::move(camelliaConfigItem.games);
+	configItem.align = camelliaConfigItem.align;
+	configItem.encrption = new CamelliaEncryption(camelliaConfigItem.key);
+
+	return true;
+}
+bool parseConfig(const std::vector<std::string>& arguments,ConfigItem &configItem) {
 
 	EncryptionType encoder;
 
 	if (!parseEncryption(arguments, encoder)) {
-		return nullptr;
+		return false;
 	}
 
-	CamelliaConfig config;
-
-	if (!read_config(L"keys", config)) {
-		return nullptr;
+	if (encoder == EncryptionType::Camellia128) {
+		return parseCamelliaConfig(arguments, configItem);
 	}
 
-	auto configItem = initConfigByDatHeader(config, arguments);
-
-	if (configItem != nullptr) {
-		return configItem;
-	}
-	configItem = initConfigByExpectHeader(config, arguments);
-
-	if (configItem != nullptr) {
-		return configItem;
-	}
-	configItem = initConfigByExternalKeyFileName(config, arguments);
-
-	if (configItem != nullptr) {
-		return configItem;
-	}
-	configItem = initConfigByInternalKeyFileName(config, arguments);
-
-	if (configItem != nullptr) {
-		return configItem;
-	}
-	return nullptr;
+	return false;
 }
 
 bool parseUseEncrypt(const std::vector<std::string>& arguments)
@@ -284,6 +318,7 @@ bool parseUseEncrypt(const std::vector<std::string>& arguments)
 		return true;
 	}
 	if (encryptPos + 1 == arguments.size()) {
+		std::wcout << "Parse encrypt error" << std::endl;
 		return true;
 	}
 	const auto encryptStr = arguments[encryptPos + 1];
@@ -297,9 +332,11 @@ bool parseInput(const std::vector<std::string>& arguments, std::wstring& input)
 {
 	const auto inputPos = findPosition<std::string>(arguments, "-i");
 	if (inputPos == -1) {
+		std::wcout << L"input not found" << std::endl;
 		return false;
 	}
 	if (inputPos + 1 == arguments.size()) {
+		std::wcout << L"input not found" << std::endl;
 		return false;
 	}
 	const auto& inputStr = arguments[inputPos + 1];
@@ -311,9 +348,11 @@ bool parseOutput(const std::vector<std::string>& arguments, std::wstring& output
 {
 	const auto outputPos = findPosition<std::string>(arguments, "-o");
 	if (outputPos == -1) {
+		std::wcout << L"output not found" << std::endl;
 		return false;
 	}
 	if (outputPos + 1 == arguments.size()) {
+		std::wcout << L"output not found" << std::endl;
 		return false;
 	}
 	const auto& outputStr = arguments[outputPos + 1];
@@ -328,6 +367,7 @@ bool parseAlign(const std::vector<std::string>& arguments, uint32_t& align)
 		return false;
 	}
 	if (alignPos + 1 == arguments.size()) {
+		std::wcout << "Parse align error" << std::endl;
 		return false;
 	}
 	const auto& outputStr = arguments[alignPos + 1];
@@ -339,10 +379,11 @@ int parseThread(const std::vector<std::string>& arguments)
 {
 	const auto threadPos = findPosition<std::string>(arguments, "-thread");
 	if (threadPos == -1) {
-		return -1;
+		return 1;
 	}
 	if (threadPos + 1 == arguments.size()) {
-		return -1;
+		std::wcout << "Parse thread error. Used 1" << std::endl;
+		return 1;
 	}
 	const auto& threadStr = arguments[threadPos + 1];
 	return std::stoi(threadStr);

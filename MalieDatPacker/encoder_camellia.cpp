@@ -20,7 +20,7 @@ uint32_t mutate_value(uint32_t value) {
     return (rotateLeft(value, 8) & 0x00FF00FF) | (rotateRight(value, 8) & 0xFF00FF00);
 }
 
-void mutate_block(uint32_t *block){
+void MutateBlock(uint32_t *block){
     block[0] = mutate_value(block[0]);
     block[1] = mutate_value(block[1]);
     block[2] = mutate_value(block[2]);
@@ -33,7 +33,7 @@ void encrypt_block(const CamelliaKey& keytable, unsigned char* block, int offset
 
     uint32_t *dst_block = reinterpret_cast<uint32_t*>(block);
 
-    mutate_block(dst_block);
+    MutateBlock(dst_block);
 
     int k = 51;
     dst_block[0] ^= keytable[k - 3];
@@ -87,7 +87,7 @@ void encrypt_block(const CamelliaKey& keytable, unsigned char* block, int offset
     dst_block[2] ^= keytable[k - 1];
     dst_block[3] ^= keytable[k];
 
-    mutate_block(dst_block);
+    MutateBlock(dst_block);
 
     uint32_t roll_bits = ((offset >> 4) & 0x0F) + 16;
     dst_block[0] = rotateRight(dst_block[0], roll_bits);
@@ -97,15 +97,126 @@ void encrypt_block(const CamelliaKey& keytable, unsigned char* block, int offset
 
 }
 
-void encrypt(const CamelliaKey& key, unsigned char* data, const int size, int offset, bool printed)
+static uint32_t MutateValue(uint32_t Value)
 {
-    int numOfBlocks = size / BlockLen;
-    for (int line = 0; line < numOfBlocks; line++) {
-        const auto start = data+line * BlockLen;
+    return (_rotl(Value, 8) & 0x00FF00FF) | (_rotr(Value, 8) & 0xFF00FF00);
+}
 
-        encrypt_block(key,start, offset);
+void MutateBlock(uint32_t* pSrc, uint32_t* pMutated)
+{
+    pMutated[0] = MutateValue(pSrc[0]);
+    pMutated[1] = MutateValue(pSrc[1]);
+    pMutated[2] = MutateValue(pSrc[2]);
+    pMutated[3] = MutateValue(pSrc[3]);
+}
+
+#define BYTE1(x) ((x      ) & 0xFF)
+#define BYTE2(x) ((x >>  8) & 0xFF)
+#define BYTE3(x) ((x >> 16) & 0xFF)
+#define BYTE4(x) ((x >> 24) & 0xFF)
+
+void decrypt_block(const CamelliaKey &decrypt_key, unsigned char* pBuffer, size_t posOffset)
+{
+    uint32_t  dst_block[4] = { 0 };
+    uint32_t* src_block = (uint32_t*)pBuffer;
+
+    auto key = decrypt_key.data();
+    const uint32_t  iterations = 3;
+
+    uint32_t roll_bits = ((posOffset >> 4) & 0x0F) + 16;
+
+    dst_block[0] = _rotl(src_block[0], roll_bits);
+    dst_block[1] = _rotr(src_block[1], roll_bits);
+    dst_block[2] = _rotl(src_block[2], roll_bits);
+    dst_block[3] = _rotr(src_block[3], roll_bits);
+
+    MutateBlock(dst_block, dst_block);
+
+    dst_block[0] ^= key[0];
+    dst_block[1] ^= key[1];
+    dst_block[2] ^= key[2];
+    dst_block[3] ^= key[3];
+
+    key += 4;
+
+    for (size_t i = 0; i < iterations; i++)
+    {
+        for (uint32_t j = 0; j < iterations; j++)
+        {
+            // Feistel rounds
+            uint32_t temp = key[2] ^ dst_block[0];
+            uint32_t scramble1 = SBOX4_4404[BYTE1(temp)] ^ SBOX3_3033[BYTE2(temp)] ^
+                SBOX2_0222[BYTE3(temp)] ^ SBOX1_1110[BYTE4(temp)];
+
+            temp = key[3] ^ dst_block[1];
+            uint32_t scramble2 = SBOX1_1110[BYTE1(temp)] ^ SBOX4_4404[BYTE2(temp)] ^
+                SBOX3_3033[BYTE3(temp)] ^ SBOX2_0222[BYTE4(temp)];
+
+            dst_block[2] ^= scramble1 ^ scramble2;
+            dst_block[3] ^= scramble1 ^ scramble2 ^ _rotr(scramble1, 8);
+
+            temp = key[0] ^ dst_block[2];
+            uint32_t scramble3 = SBOX4_4404[BYTE1(temp)] ^ SBOX3_3033[BYTE2(temp)] ^
+                SBOX2_0222[BYTE3(temp)] ^ SBOX1_1110[BYTE4(temp)];
+
+            temp = key[1] ^ dst_block[3];
+            uint32_t scramble4 = SBOX1_1110[BYTE1(temp)] ^ SBOX4_4404[BYTE2(temp)] ^
+                SBOX3_3033[BYTE3(temp)] ^ SBOX2_0222[BYTE4(temp)];
+
+            dst_block[0] ^= scramble3 ^ scramble4;
+            dst_block[1] ^= scramble3 ^ scramble4 ^ _rotr(scramble3, 8);
+
+            key += 4;
+        }
+
+        if (i < iterations - 1) {
+            dst_block[1] ^= _rotl(key[2] & dst_block[0], 1);
+            dst_block[0] ^= dst_block[1] | key[3];
+            dst_block[2] ^= dst_block[3] | key[1];
+            dst_block[3] ^= _rotl(key[0] & dst_block[2], 1);
+
+            key += 4;
+        }
+    }
+
+    std::swap(dst_block[0], dst_block[2]);
+    std::swap(dst_block[1], dst_block[3]);
+
+    dst_block[0] ^= key[0];
+    dst_block[1] ^= key[1];
+    dst_block[2] ^= key[2];
+    dst_block[3] ^= key[3];
+
+    MutateBlock(dst_block, src_block);
+}
+
+
+void decrypt(const CamelliaKey& key, unsigned char* data, const int size, int offset, bool printed)
+{
+   
+
+}
+
+void CamelliaEncryption::encrypt(unsigned char* data, unsigned int data_length, unsigned int offset) const
+{
+    int numOfBlocks = data_length / BlockLen;
+    for (int line = 0; line < numOfBlocks; line++) {
+        const auto start = data + line * BlockLen;
+
+        encrypt_block(m_key, start, offset);
 
         offset += BlockLen;
     }
+}
 
+void CamelliaEncryption::decrypt(unsigned char* data, unsigned int data_length, unsigned int offset) const
+{
+    int numOfBlocks = data_length / BlockLen;
+    for (int line = 0; line < numOfBlocks; line++) {
+        const auto start = data + line * BlockLen;
+
+        decrypt_block(m_key, start, offset);
+
+        offset += BlockLen;
+    }
 }

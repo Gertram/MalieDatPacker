@@ -44,6 +44,81 @@ int show_help() {
 	return 0;
 }
 
+int work(const std::vector<std::string> &arguments) {
+
+	std::wstring input;
+
+	if (!parseInput(arguments, input)) {
+		return -3;
+	}
+
+	std::wstring output;
+
+	if (!parseOutput(arguments, output)) {
+		return -4;
+	}
+
+	const auto start = clock();
+
+	ConfigItem config;
+
+	const auto isConfigLoad = parseConfig(arguments,config);
+
+	const auto mode = parseWorkMode(arguments);
+
+	if (mode == WorkMode::Pack) {
+		const auto useEncrypt = parseUseEncrypt(arguments);
+
+		if (useEncrypt) {
+			if (!isConfigLoad) {
+				std::wcout << L"You need key for encryption" << std::endl;
+				return -2;
+			}
+			const auto temppath = L"temp.dat";
+
+			pack(input, temppath, config.align);
+
+			encrypt_file(config.encrption, temppath, output, parseThread(arguments));
+
+			std::filesystem::remove(temppath);
+		}
+		else {
+			uint32_t align;
+			if (isConfigLoad) {
+				align = config.align;
+			}
+			else if (!parseAlign(arguments, align)) {
+				std::wcout << L"You need align for pack" << std::endl;
+				return -5;
+			}
+
+			pack(input, output, align);
+		}
+
+	}
+	else if (mode == WorkMode::Encryption) {
+		if (!isConfigLoad) {
+			std::wcout << L"You need key for encryption" << std::endl;
+			return -2;
+		}
+		encrypt_file(config.encrption, input, output, parseThread(arguments));
+	}
+	else if (mode == WorkMode::Decryption) {
+		if (!isConfigLoad) {
+			std::wcout << L"You need key for decryption" << std::endl;
+			return -2;
+		}
+		decrypt_file(config.encrption, input, output, parseThread(arguments));
+	}
+	else {
+		std::wcout << L"Mode undefined" << std::endl;
+	}
+	const auto end = clock();
+
+	std::cout << "Time: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
+
+}
+
 int main(int argc, char* argv[]) {
 	std::vector<std::string> arguments(argc - 1);
 
@@ -55,67 +130,13 @@ int main(int argc, char* argv[]) {
 		return show_help();
 	}
 
-	std::wstring input;
+	const auto result = work(arguments);
 
-	if (!parseInput(arguments,input)) {
-		return -3;
+	if (result < 0) {
+		std::wcout << "Error code is " << result << std::endl;
+		getchar();
+		return 0;
 	}
-	
-	std::wstring output;
-
-	if (!parseOutput(arguments,output)) {
-		return -4;
-	}
-
-	const auto start = clock();
-
-	const auto config = initConfig(arguments);
-
-	const auto mode = parseWorkMode(arguments);
-
-	if (mode == WorkMode::Pack) {
-		const auto useEncrypt = parseUseEncrypt(arguments);
-
-		if (useEncrypt) {
-			if (config == nullptr) {
-				std::wcout << L"You need key for encryption" << std::endl;
-				return -2;
-			}
-			const auto temppath = L"temp.dat";
-
-			pack(input, temppath, config->getAlign());
-
-			encrypt_file(config->getKey(), temppath, output, parseThread(arguments));
-
-			std::filesystem::remove(temppath);
-		}
-		else {
-			uint32_t align;
-			if (config != nullptr) {
-				align = config->getAlign();
-			}
-			else if (!parseAlign(arguments, align)) {
-				std::wcout << L"You need align for pack" << std::endl;
-				return -5;
-			}
-
-			pack(input, output, align);
-		}
-		
-	}
-	else if (mode == WorkMode::Encryption) {
-		if (config == nullptr) {
-			std::wcout << L"You need key for encryption" << std::endl;
-			return -2;
-		}
-		encrypt_file(config->getKey(), input, output, parseThread(arguments));
-	}
-	else {
-		std::wcout << L"Mode undefined" << std::endl;
-	}
-	const auto end = clock();
-
-	std::cout << "Time: " << float(end - start) / CLOCKS_PER_SEC << std::endl;
 
 	if (contains<std::string>(arguments, "-wait")) {
 		getchar();
