@@ -24,12 +24,6 @@
     <ClCompile Include="camellia_encryption.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="Index.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
-    <ClCompile Include="File.cpp">
-      <Filter>Исходные файлы</Filter>
-    </ClCompile>
     <ClCompile Include="Packer.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>

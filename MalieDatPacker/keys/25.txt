@@ -2,6 +2,8 @@ GAMES
 Soushuu Senshinkan Gakuen Hachimyoujin Trial ver.1
 ALIGN
 1024
+ENCRYPTION
+Camellia
 KEY
 3962685803
 1927508377

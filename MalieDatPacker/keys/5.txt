@@ -2,6 +2,8 @@ GAMES
 Deep Love Diary -Koibito Nikki-
 ALIGN
 1024
+ENCRYPTION
+Camellia
 KEY
 3323700025
 1355722666

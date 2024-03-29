@@ -146,8 +146,6 @@
     <ClCompile Include="cmd.cpp" />
     <ClCompile Include="camellia_encryption.cpp" />
     <ClCompile Include="encryption.cpp" />
-    <ClCompile Include="File.cpp" />
-    <ClCompile Include="Index.cpp" />
     <ClCompile Include="key.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="malie_encryption.cpp" />

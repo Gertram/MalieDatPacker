@@ -2,6 +2,8 @@ GAMES
 Soushuu Senshinkan Gakuen Hachimyoujin
 ALIGN
 1024
+ENCRYPTION
+Camellia
 KEY
 1550330158
 2006347004

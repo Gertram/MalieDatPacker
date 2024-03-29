@@ -2,6 +2,8 @@ GAMES
 Shiro no Pikapika Ohoshi-sama
 ALIGN
 4096
+ENCRYPTION
+Camellia
 KEY
 1586479891
 2039721421

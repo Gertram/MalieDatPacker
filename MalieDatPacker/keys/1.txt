@@ -3,6 +3,8 @@ Danzai no Maria
 London Detective Mysteria
 ALIGN
 4096
+ENCRYPTION
+Camellia
 KEY
 1316495790
 2819474132

@@ -2,6 +2,8 @@ GAMES
 Electro Arms -Realize Digital Dimension-
 ALIGN
 4096
+ENCRYPTION
+Camellia
 KEY
 3030644097
 2916013157

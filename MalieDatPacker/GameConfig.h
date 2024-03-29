@@ -13,6 +13,6 @@ enum EncryptionType {
 struct GameConfig {
 	EncryptionType encryption;
 	std::vector<uint32_t> key;
-	uint32_t align;
+	uint32_t align = 0;
 	std::vector<std::wstring> games;
 };

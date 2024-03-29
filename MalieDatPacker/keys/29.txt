@@ -2,6 +2,8 @@ GAMES
 Vermilion -Bind of Blood-
 ALIGN
 4096
+ENCRYPTION
+Camellia
 KEY
 2037873234
 630832887

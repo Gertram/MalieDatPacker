@@ -2,6 +2,8 @@ GAMES
 Himawari!! -Anata Dake o Mitsumeteru-
 ALIGN
 1024
+ENCRYPTION
+Camellia
 KEY
 3842005063
 3442633671

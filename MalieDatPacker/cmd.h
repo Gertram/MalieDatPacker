@@ -8,8 +8,8 @@ const int DefaultCheckOffset = 0x10;
 
 struct ConfigItem {
 	std::vector<std::wstring> games;
-	uint32_t align;
-	const IEncryption *encryption;
+	uint32_t align = 0;
+	const IEncryption *encryption = nullptr;
 };
 
 enum WorkMode {
@@ -19,20 +19,22 @@ enum WorkMode {
 	Unpack
 };
 
-WorkMode parseWorkMode(const std::vector<std::string>& arguments);
+int parseWorkMode(const std::vector<std::string>& arguments, WorkMode &workMode);
 
-int parseCheckOffset(const std::vector<std::string>& arguments);
+int parseCheckOffset(const std::vector<std::string>& arguments, uint32_t checkOffset);
 
-bool parseEncryption(const std::vector<std::string>& arguments, EncryptionType& encoder);
+int parseEncryption(const std::vector<std::string>& arguments, EncryptionType& encoder);
 
-bool parseConfig(const std::vector <std::string>& arguments,ConfigItem &configItem);
+int parseConfig(const std::vector <std::string>& arguments,ConfigItem &configItem);
 
-bool parseUseEncrypt(const std::vector<std::string>& arguments);
+int parseUseEncrypt(const std::vector<std::string>& arguments,bool &use_encrypt);
 
-bool parseInput(const std::vector<std::string>& arguments, std::wstring& input);
+int parseNoTemp(const std::vector<std::string>& arguments,bool &notemp);
 
-bool parseOutput(const std::vector<std::string>& arguments, std::wstring& output);
+int parseInput(const std::vector<std::string>& arguments, std::wstring& input);
 
-bool parseAlign(const std::vector<std::string>& arguments, uint32_t& align);
+int parseOutput(const std::vector<std::string>& arguments, std::wstring& output);
 
-int parseThread(const std::vector<std::string>& arguments);
+int parseAlign(const std::vector<std::string>& arguments, uint32_t& align);
+
+int parseThread(const std::vector<std::string>& arguments, uint32_t &thread_count);

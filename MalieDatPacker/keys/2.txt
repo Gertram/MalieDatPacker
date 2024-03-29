@@ -2,6 +2,8 @@ GAMES
 Aki Uso -The only neat thing to do-
 ALIGN
 1024
+ENCRYPTION
+Camellia
 KEY
 1041479107
 3487836745

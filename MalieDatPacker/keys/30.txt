@@ -2,6 +2,8 @@ GAMES
 Zero Infinity -Devil of Maxwell-
 ALIGN
 4096
+ENCRYPTION
+Camellia
 KEY
 288562010
 3419193633

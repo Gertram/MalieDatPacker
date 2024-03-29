@@ -2,6 +2,8 @@ GAMES
 Natsu Uso -Ahead of the Reminiscence-
 ALIGN
 1024
+ENCRYPTION
+Camellia
 KEY
 4111938573
 764516298

@@ -4,11 +4,11 @@
 #include "utils.h"
 
 void ToShiftJis(const std::wstring& str, char* dst, size_t dst_size) {
-	int nJisLen = ::WideCharToMultiByte(932, 0, str.c_str(), str.size(), NULL, 0, NULL, NULL);
+	int nJisLen = ::WideCharToMultiByte(932, 0, str.c_str(), static_cast<int>(str.size()), NULL, 0, NULL, NULL);
 	if (nJisLen > dst_size) {
 		throw std::exception("nJisLen > dst_size");
 	}
-	::WideCharToMultiByte(932, 0, str.c_str(), str.size(), dst, nJisLen, NULL, NULL);
+	::WideCharToMultiByte(932, 0, str.c_str(), static_cast<int>(str.size()), dst, nJisLen, NULL, NULL);
 }
 
 void cut_file(const wchar_t* filename, const wchar_t* output_filename, size_t file_size) {
@@ -46,7 +46,7 @@ std::vector<std::string_view> splitString(const std::string& str, const std::str
 	return tokens;
 }
 
-int file_compare(const wchar_t *filepath1,const wchar_t *filepath2) {
+long long file_compare(const wchar_t *filepath1,const wchar_t *filepath2) {
 	FILE *file1,*file2;
 	_wfopen_s(&file1, filepath1, L"rb");
 	_wfopen_s(&file2, filepath2, L"rb");

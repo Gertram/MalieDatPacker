@@ -2,6 +2,8 @@ GAMES
 Soushuu Senshinkan Gakuen Bansenjin
 ALIGN
 1024
+ENCRYPTION
+Camellia
 KEY
 1520041878
 5225366

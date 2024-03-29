@@ -2,6 +2,8 @@ GAMES
 Dies irae ~Interview with Kaziklu Bey~
 ALIGN
 1024
+ENCRYPTION
+Camellia
 KEY
 4163763973
 3173461398

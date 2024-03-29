@@ -2,6 +2,8 @@ GAMES
 Kajiri Kamui Kagura Akebono no Hikari
 ALIGN
 4096
+ENCRYPTION
+Camellia
 KEY
 3666284865
 629548533

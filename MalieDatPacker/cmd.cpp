@@ -12,66 +12,72 @@
 #include "camellia_encryption.h"
 #include "malie_encryption.h"
 
-WorkMode parseWorkMode(const std::vector<std::string>& arguments)
+int parseWorkMode(const std::vector<std::string>& arguments, WorkMode &workMode)
 {
 	const auto modePos = findPosition<std::string>(arguments, "-mode");
 	if (modePos == -1) {
-		return WorkMode::Pack;
+		workMode = WorkMode::Pack;
+		return 0;
 	}
 	if (modePos + 1 == arguments.size()) {
 		std::wcout << "Parse mode error. Used pack" << std::endl;
-		return WorkMode::Pack;
+		return -1;
 	}
 	const auto offsetStr = arguments[modePos + 1];
 	if (offsetStr == "encrypt") {
-		return WorkMode::Encryption;
+		workMode = WorkMode::Encryption;
+		return 1;
 	}
 	if (offsetStr == "decrypt") {
-		return WorkMode::Decryption;
+		workMode = WorkMode::Decryption;
+		return 1;
 	}
 	if (offsetStr == "pack") {
-		return WorkMode::Pack;
+		workMode = WorkMode::Pack;
+		return 1;
 	}
-	std::wcout << "Undefined mode error. Used pack" << std::endl;
-	return WorkMode::Pack;
+	std::wcout << "Undefined workmode error" << std::endl;
+	return -2;
 }
 
-int parseCheckOffset(const std::vector<std::string>& arguments) {
+int parseCheckOffset(const std::vector<std::string>& arguments,size_t &checkOffset) {
 	const auto offsetPos = findPosition<std::string>(arguments, "-offset");
 	if (offsetPos == -1) {
-		return DefaultCheckOffset;
+		checkOffset = DefaultCheckOffset;
+		return 0;
 	}
 	if (offsetPos + 1 == arguments.size()) {
-		std::wcout << "Parse offset error. Used default " << std::hex << DefaultCheckOffset << std::dec << std::endl;
-		return DefaultCheckOffset;
+		std::wcout << "Parse offset error" << std::endl;
+		return -1;
 	}
-	const auto offsetStr = arguments[offsetPos + 1];
-	int offset;
-	std::from_chars(offsetStr.data(), offsetStr.data() + offsetStr.size(), offset, 16);
-	return offset;
+	const auto &offsetStr = arguments[offsetPos + 1];
+	std::from_chars(offsetStr.data(), offsetStr.data() + offsetStr.size(), checkOffset, 16);
+	return 1;
 }
 
-bool parseEncryption(const std::vector<std::string>& arguments, EncryptionType& encoder) {
+int parseEncryption(const std::vector<std::string>& arguments, EncryptionType& encoder) {
 	const auto encoder_pos = findPosition<std::string>(arguments, "-encrpytion");
 	if (encoder_pos == -1) {
 		encoder = EncryptionType::Camellia128;
-		return true;
+		return 0;
 	}
 	if (encoder_pos + 1 == arguments.size()) {
 		std::wcout << L"Encryption expected but end of line detected" << std::endl;
-		return false;
+		return -1;
 	}
 	const auto encoderStr = arguments[encoder_pos + 1];
 	if (encoderStr == "camellia" || encoderStr == "Camellia") {
-		return EncryptionType::Camellia128;
+		encoder= EncryptionType::Camellia128;
+		return 1;
 	}
 	if (encoderStr == "malie" || encoderStr == "Malie") {
-		return EncryptionType::Malie;
+		encoder = EncryptionType::Malie;
+		return 1;
 	}
 
 	std::cout << "Unknown encryption: " << encoderStr << std::endl;
 
-	return false;
+	return -2;
 }
 
 const IEncryption* parseEncryption(const GameConfig& configItem) {
@@ -93,10 +99,10 @@ const IEncryption* parseEncryption(const GameConfig& configItem) {
 	return nullptr;
 }
 
-bool initConfigByExpectHeader(Config config,GameConfig &configItem, const std::vector<uint8_t>& expect_header, int checkOffset) {
+int initConfigByExpectHeader(Config config,GameConfig &configItem, const std::vector<uint8_t>& expect_header, int checkOffset) {
 
 	if (expect_header.size() == 0) {
-		return false;
+		return -1;
 	}
 
 	printf("Try to find expect...\n");
@@ -114,67 +120,84 @@ bool initConfigByExpectHeader(Config config,GameConfig &configItem, const std::v
 		if (memcmp(bs, expect_header.data(), expect_header.size()) == 0) {
 			std::wcout << L"Find expect config : " << item.first << std::endl;
 			configItem = item.second;
-			return true;
+			return 1;
 		}
 	}
 	printf("Cannot found expect ExpectHeader.\n");
-	return false;
+	return -2;
 }
 
-bool initConfigByExpectHeader(Config config, GameConfig& configItem, const std::vector<std::string>& arguments) {
+int initConfigByExpectHeader(Config config, GameConfig& configItem, const std::vector<std::string>& arguments) {
 	const auto expectPos = findPosition<std::string>(arguments, "-expect");
 
 	if (expectPos == -1) {
-		return false;
+		return 0;
 	}
 
 	if (expectPos + 1 == arguments.size()) {
 		std::wcout << "Parse expected header error" << std::endl;
-		return false;
+		return -1;
 	}
 
 	const auto& expectStr = arguments[expectPos + 1];
 
-	const auto strs = splitString(expectStr, " ");
-
 	std::vector<uint8_t> expect_header;
-	for (const auto& hexStr : strs) {
-		int value;
-		std::from_chars(hexStr.data(), hexStr.data() + hexStr.size(), value, 16);
-		expect_header.push_back(value);
+	try {
+
+		const auto strs = splitString(expectStr, " ");
+		if (strs.size() == 0) {
+			std::wcout << "Expected header was empty" << std::endl;
+			return -2;
+		}
+
+		for (const auto& hexStr : strs) {
+			int value;
+			std::from_chars(hexStr.data(), hexStr.data() + hexStr.size(), value, 16);
+			expect_header.push_back(value);
+		}
+	}
+	catch (std::exception& exp) {
+		std::wcout << "Parse expected header error" << std::endl;
+		return -2;
 	}
 
-
-	const auto checkOffset = parseCheckOffset(arguments);
+	size_t checkOffset;
+	
+	if (parseCheckOffset(arguments, checkOffset) < 0) {
+		return -2;
+	}
 
 	return initConfigByExpectHeader(config,configItem, expect_header, checkOffset);
 }
 
-
-bool initConfigByDatHeader(Config config, GameConfig& configItem, const std::vector<std::string>& arguments) {
+int initConfigByDatHeader(Config config, GameConfig& configItem, const std::vector<std::string>& arguments) {
 	const auto expectPos = findPosition<std::string>(arguments, "-dat");
 
 	if (expectPos == -1) {
-		return false;
+		return 0;
 	}
 
 	if (expectPos + 1 == arguments.size()) {
 		std::wcout << "Parse dat error" << std::endl;
-		return false;
+		return -1;
 	}
 
 	const auto& datpath = arguments[expectPos + 1];
 
+	size_t checkOffset;
+
+	if (parseCheckOffset(arguments, checkOffset) < 0) {
+		return -2;
+	}
+
 	FILE* file;
 	const auto result = fopen_s(&file, datpath.c_str(), "rb");
 	if (result != 0 || file == nullptr) {
-		return false;
+		std::wcout << "Dat file not found" << std::endl;
+		return -3;
 	}
 
 	uint8_t buffer[8];
-
-
-	const auto checkOffset = parseCheckOffset(arguments);
 
 	fseek(file, checkOffset, SEEK_SET);
 
@@ -190,17 +213,17 @@ bool initConfigByDatHeader(Config config, GameConfig& configItem, const std::vec
 	return initConfigByExpectHeader(config,configItem, expect_header, checkOffset);
 }
 
-bool initConfigByGame(Config config, GameConfig& configItem, const std::vector<std::string>& arguments)
+int initConfigByGame(Config config, GameConfig& configItem, const std::vector<std::string>& arguments)
 {
 	const auto gamePos = findPosition<std::string>(arguments, "-game");
 
 	if (gamePos == -1) {
-		return false;
+		return 0;
 	}
 
 	if (gamePos + 1 == arguments.size()) {
 		std::wcout << "Parse game error" << std::endl;
-		return false;
+		return -1;
 	}
 
 	const auto& gameStr = arguments[gamePos + 1];
@@ -225,30 +248,37 @@ bool initConfigByGame(Config config, GameConfig& configItem, const std::vector<s
 
 	std::wcout << L"Enter game number: ";
 
-	size_t number;
+	try {
 
-	std::wcin >> number;
+		size_t number;
 
-	if (number < 1 || number > results.size()) {
-		std::wcout << L"Incorrect input" << std::endl;
-		return false;
+		std::wcin >> number;
+
+		if (number < 1 || number > results.size()) {
+			std::wcout << L"Incorrect input" << std::endl;
+			return -2;
+		}
+
+		configItem = *results[number - 1];
 	}
-
-	configItem = *results[number - 1];
-	return true;
+	catch (std::exception& exp) {
+		std::wcout << L"Incorrect input" << std::endl;
+		return -3;
+	}
+	return 1;
 }
 
 
-bool initConfigByInternalKeyFileName(Config config, GameConfig& configItem, const std::vector<std::string>& arguments) {
+int initConfigByInternalKeyFileName(Config config, GameConfig& configItem, const std::vector<std::string>& arguments) {
 	const auto keyPos = findPosition<std::string>(arguments, "-internal_key");
 
 	if (keyPos == -1) {
-		return false;
+		return 0;
 	}
 
 	if (keyPos + 1 == arguments.size()) {
 		std::wcout << "Parse key error" << std::endl;
-		return false;
+		return -1;
 	}
 
 	const auto& keyStr = arguments[keyPos + 1];
@@ -258,25 +288,24 @@ bool initConfigByInternalKeyFileName(Config config, GameConfig& configItem, cons
 	for (const auto& pair : config) {
 		if (pair.first.find(filename) != std::wstring::npos) {
 			configItem = pair.second;
-			return true;
+			return 1;
 		}
 	}
 
-	return false;
+	return -2;
 }
 
-bool initConfigByKeyFileName(Config config, GameConfig& configItem, const std::vector<std::string>& arguments) {
+int initConfigByKeyFileName(Config config, GameConfig& configItem, const std::vector<std::string>& arguments) {
 	const auto keyPos = findPosition<std::string>(arguments, "-key");
 
 	if (keyPos == -1) {
-		return false;
+		return 0;
 	}
 
 	if (keyPos + 1 == arguments.size()) {
 		std::wcout << L"Parse key error" << std::endl;
-		return false;
+		return -1;
 	}
-
 
 	const auto& keyStr = arguments[keyPos + 1];
 
@@ -284,13 +313,12 @@ bool initConfigByKeyFileName(Config config, GameConfig& configItem, const std::v
 
 	if (!input.is_open()) {
 		std::cout << "File \"" << keyStr << "\" was not opened" << std::endl;
-		return false;
+		return -2;
 	}
 
 	wchar_t magic[magic_length];
 
 	input.read(magic, magic_length);
-
 
 	if (wmemcmp(magic, UTF8_MAGIC, magic_length) != 0) {
 		input.seekg(0);
@@ -317,30 +345,30 @@ bool initConfigByKeyFileName(Config config, GameConfig& configItem, const std::v
 		line_number++;
 	}
 
-	if (!parseEncryption(arguments, configItem.encryption)) {
+	if (parseEncryption(arguments, configItem.encryption) < 0) {
 		std::wcout << L"Key option need encryption" << std::endl;
-		return false;
+		return -3;
 	}
 
 
-	if (!parseAlign(arguments, configItem.align)) {
+	if (parseAlign(arguments, configItem.align) < 0) {
 		std::wcout << L"Key option need align" << std::endl;
-		return false;
+		return -4;
 	}
 
-	return true;
+	return 1;
 }
 
-bool initConfigByExternalKeyFileName(Config config, GameConfig& configItem, const std::vector<std::string>& arguments) {
+int initConfigByExternalKeyFileName(Config config, GameConfig& configItem, const std::vector<std::string>& arguments) {
 	const auto expectPos = findPosition<std::string>(arguments, "-external_key");
 
 	if (expectPos == -1) {
-		return false;
+		return 0;
 	}
 
 	if (expectPos + 1 == arguments.size()) {
 		std::wcout << "Parse external_key error" << std::endl;
-		return false;
+		return -1;
 	}
 
 	const auto& keyStr = arguments[expectPos + 1];
@@ -348,38 +376,40 @@ bool initConfigByExternalKeyFileName(Config config, GameConfig& configItem, cons
 	return read_key(std::filesystem::path(keyStr),configItem);
 }
 
-bool parseConfig(const std::vector<std::string>& arguments,const Config &config, GameConfig& configItem) {
+int parseConfig(const std::vector<std::string>& arguments,const Config &config, GameConfig& configItem) {
 
-	if (initConfigByDatHeader(config, configItem, arguments)) {
-		return true;
-	}
-	if (initConfigByExpectHeader(config, configItem, arguments)) {
-		return true;
-	}
+	int result;
 
-	if (initConfigByKeyFileName(config, configItem, arguments)) {
-		return true;
+	if ((result = initConfigByDatHeader(config, configItem, arguments)) != 0) {
+		return result;
+	}
+	if ((result = initConfigByExpectHeader(config, configItem, arguments)) != 0) {
+		return result;
 	}
 
-	if (initConfigByInternalKeyFileName(config, configItem, arguments)) {
-		return true;
+	if ((result = initConfigByKeyFileName(config, configItem, arguments)) != 0) {
+		return result;
 	}
 
-	if (initConfigByGame(config, configItem, arguments)) {
-		return true;
+	if ((result = initConfigByInternalKeyFileName(config, configItem, arguments)) !=0 ) {
+		return result;
 	}
-	return false;
+
+	if ((result = initConfigByGame(config, configItem, arguments)) != 0){
+		return result;
+	}
+	return -10;
 }
 
-bool parseConfig(const std::vector<std::string>& arguments, ConfigItem &configItem) {
+int parseConfig(const std::vector<std::string>& arguments, ConfigItem &configItem) {
 	Config config;
 
 	if (!read_config(L"keys", config)) {
-		return false;
+		return -1;
 	}
 	GameConfig gameConfig;
 	if(!parseConfig(arguments, config,gameConfig)){
-		return false;
+		return -2;
 	}
 
 	configItem.games = gameConfig.games;
@@ -391,83 +421,129 @@ bool parseConfig(const std::vector<std::string>& arguments, ConfigItem &configIt
 	memset(buffer, 0, sizeof(buffer));
 	configItem.encryption->encrypt(buffer, sizeof(buffer), 0x10);
 
-	return true;
+	return 1;
 }
 
-bool parseUseEncrypt(const std::vector<std::string>& arguments)
+int parseUseEncrypt(const std::vector<std::string>& arguments,bool &use_encrypt)
 {
 	const auto encryptPos = findPosition<std::string>(arguments, "-encrypt");
 	if (encryptPos == -1) {
-		return true;
+		use_encrypt = false;
+		return 0;
 	}
 	if (encryptPos + 1 == arguments.size()) {
-		std::wcout << "Parse encrypt error" << std::endl;
-		return true;
+		std::wcout << L"Parse encrypt error" << std::endl;
+		return -1;
 	}
 	const auto encryptStr = arguments[encryptPos + 1];
-	if (encryptStr == "0") {
-		return false;
+	if (encryptStr == "1") {
+		use_encrypt = true;
+		return 1;
 	}
-	return true;
+	if (encryptStr == "0") {
+		use_encrypt = false;
+		return 1;
+	}
+	std::wcout << L"Parse encrypt error" << std::endl;
+	return -2;
 }
 
-bool parseInput(const std::vector<std::string>& arguments, std::wstring& input)
+int parseNoTemp(const std::vector<std::string>& arguments,bool &notemp)
+{
+	const auto encryptPos = findPosition<std::string>(arguments, "-notemp");
+	if (encryptPos == -1) {
+		notemp = false;
+		return 0;
+	}
+	if (encryptPos + 1 == arguments.size()) {
+		std::wcout << L"Parse notemp error" << std::endl;
+		return -1;
+	}
+	const auto encryptStr = arguments[encryptPos + 1];
+	if (encryptStr == "1") {
+		notemp = true;
+		return 1;
+	}
+	if (encryptStr == "0") {
+		notemp = false;
+		return 1;
+	}
+	std::wcout << L"Parse notemp error" << std::endl;
+	return -2;
+}
+
+int parseInput(const std::vector<std::string>& arguments, std::wstring& input)
 {
 	const auto inputPos = findPosition<std::string>(arguments, "-i");
 	if (inputPos == -1) {
 		std::wcout << L"input not found" << std::endl;
-		return false;
+		return 0;
 	}
 	if (inputPos + 1 == arguments.size()) {
-		std::wcout << L"input not found" << std::endl;
-		return false;
+		std::wcout << L"Parse input error" << std::endl;
+		return -1;
 	}
 	const auto& inputStr = arguments[inputPos + 1];
 	input = std::filesystem::path(inputStr);
-	return true;
+	return 1;
 }
 
-bool parseOutput(const std::vector<std::string>& arguments, std::wstring& output)
+int parseOutput(const std::vector<std::string>& arguments, std::wstring& output)
 {
 	const auto outputPos = findPosition<std::string>(arguments, "-o");
 	if (outputPos == -1) {
 		std::wcout << L"output not found" << std::endl;
-		return false;
+		return 0;
 	}
 	if (outputPos + 1 == arguments.size()) {
-		std::wcout << L"output not found" << std::endl;
-		return false;
+		std::wcout << L"Parse output error" << std::endl;
+		return -1;
 	}
 	const auto& outputStr = arguments[outputPos + 1];
 	output = std::filesystem::path(outputStr);
-	return true;
+	return 1;
 }
 
-bool parseAlign(const std::vector<std::string>& arguments, uint32_t& align)
+int parseAlign(const std::vector<std::string>& arguments, uint32_t& align)
 {
 	const auto alignPos = findPosition<std::string>(arguments, "-align");
 	if (alignPos == -1) {
-		return false;
+		return 0;
 	}
 	if (alignPos + 1 == arguments.size()) {
 		std::wcout << "Parse align error" << std::endl;
-		return false;
+		return -1;
 	}
 	const auto& outputStr = arguments[alignPos + 1];
-	align = std::stoi(outputStr);
-	return true;
+	try {
+		align = std::stoi(outputStr);
+
+		return 1;
+	}
+	catch (std::exception& exp) {
+		std::wcout << "Parse align error" << std::endl;
+		return -2;
+	}
 }
 
-int parseThread(const std::vector<std::string>& arguments)
+int parseThread(const std::vector<std::string>& arguments, uint32_t &thread_count)
 {
 	const auto threadPos = findPosition<std::string>(arguments, "-thread");
 	if (threadPos == -1) {
-		return 1;
+		thread_count = 1;
+		return 0;
 	}
 	if (threadPos + 1 == arguments.size()) {
-		std::wcout << "Parse thread error. Used 1" << std::endl;
-		return 1;
+		std::wcout << "Parse thread error" << std::endl;
+		return -1;
 	}
 	const auto& threadStr = arguments[threadPos + 1];
-	return std::stoi(threadStr);
+	try {
+		thread_count = std::stoi(threadStr);
+		return 1;
+	}
+	catch (std::exception& exp) {
+		std::wcout << "Parse thread error" << std::endl;
+		return -2;
+	}
 }

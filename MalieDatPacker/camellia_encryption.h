@@ -14,8 +14,8 @@ public:
 	CamelliaEncryption(const CamelliaKey& key):m_key(key) {
 
 	}
-	void encrypt(unsigned char* data, unsigned int data_length, unsigned int offset) const override;
-	void decrypt(unsigned char* data, unsigned int data_length, unsigned int offset) const override;
+	void encrypt(unsigned char* data, size_t data_length, size_t offset) const override;
+	void decrypt(unsigned char* data, size_t data_length, size_t offset) const override;
 private:
 	const CamelliaKey m_key;
 };

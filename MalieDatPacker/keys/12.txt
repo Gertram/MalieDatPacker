@@ -2,6 +2,8 @@ GAMES
 Kajiri Kamui Kagura Premier Trial
 ALIGN
 4096
+ENCRYPTION
+Camellia
 KEY
 342800059
 3978668639

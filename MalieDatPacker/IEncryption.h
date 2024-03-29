@@ -1,10 +1,10 @@
 #pragma once
 
 
-const int BlockLen = 0x10;
+const size_t BlockLen = 0x10;
 
 struct IEncryption {
 public:
-	virtual void encrypt(unsigned char* data, unsigned int data_length, unsigned int offset) const = 0;
-	virtual void decrypt(unsigned char* data, unsigned int data_length, unsigned int offset) const = 0;
+	virtual void encrypt(unsigned char* data, size_t data_length, size_t offset) const = 0;
+	virtual void decrypt(unsigned char* data, size_t data_length, size_t offset) const = 0;
 };

@@ -2,6 +2,8 @@ GAMES
 Fuyu Uso -Snow World End- Trial
 ALIGN
 1024
+ENCRYPTION
+Camellia
 KEY
 88275304
 2747105906

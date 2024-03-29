@@ -2,6 +2,8 @@ GAMES
 Sakashiki Hito ni Miru Kokoro
 ALIGN
 4096
+ENCRYPTION
+Camellia
 KEY
 1656791692
 383247051

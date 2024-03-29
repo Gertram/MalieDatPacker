@@ -2,6 +2,8 @@ GAMES
 Tapestry -you will meet yourself-
 ALIGN
 4096
+ENCRYPTION
+Camellia
 KEY
 1031331327
 1820866184
